@@ -1,5 +1,6 @@
 package com.project_agh.blastradiusanalyzer.controllers;
 
+import com.project_agh.blastradiusanalyzer.dtos.TeamDto;
 import com.project_agh.blastradiusanalyzer.models.Team;
 import com.project_agh.blastradiusanalyzer.repositories.interfaces.TeamRepository;
 import com.project_agh.blastradiusanalyzer.services.TeamService;
@@ -18,8 +19,8 @@ public class TeamController {
     }
 
     @PostMapping("create-team/")
-    ResponseEntity<?>  createTeam(@RequestBody String name){
-        Team team = new Team(String.valueOf(UUID.randomUUID()), name);
+    ResponseEntity<?>  createTeam(@RequestBody TeamDto teamDto){
+        Team team = new Team(String.valueOf(UUID.randomUUID()), teamDto.name());
         teamService.createTeam(team);
         return ResponseEntity.ok().build();
     }
