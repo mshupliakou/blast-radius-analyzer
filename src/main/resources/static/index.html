@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blast Radius Analyzer</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        surface: '#18181b', // zinc-900
+                        background: '#09090b', // zinc-950
+                    }
+                }
+            }
+        }
+    </script>
+
+    <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        body {
+            background-color: #09090b;
+            color: #e4e4e7;
+            background-image: radial-gradient(circle at top right, rgba(79, 70, 229, 0.05), transparent 40%),
+            radial-gradient(circle at bottom left, rgba(225, 29, 72, 0.05), transparent 40%);
+        }
+
+        #mynetwork {
+            width: 100%;
+            height: 100%;
+            border-radius: 1rem;
+            background: rgba(24, 24, 27, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Modern Glass Panel */
+        .glass-panel {
+            background: rgba(24, 24, 27, 0.6);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        /* Customizing Vis.js editing bar to fit the gentle theme */
+        .vis-network .vis-manipulation {
+            background: rgba(24, 24, 27, 0.8) !important;
+            backdrop-filter: blur(8px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+            color: #a1a1aa !important;
+            font-family: 'Inter', sans-serif !important;
+            border-top-left-radius: 1rem;
+            border-top-right-radius: 1rem;
+            padding: 8px !important;
+        }
+        .vis-network .vis-manipulation .vis-button {
+            border-radius: 8px;
+            margin-top: 0;
+            padding: 4px 12px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        .vis-network .vis-manipulation .vis-button:hover {
+            background: rgba(99, 102, 241, 0.2) !important;
+            box-shadow: none !important;
+            color: #818cf8 !important;
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #52525b; }
+    </style>
+</head>
+<body class="h-screen flex flex-col overflow-hidden">
+
+<header class="py-4 px-6 border-b border-white/5 glass-panel flex justify-between items-center z-10">
+    <div class="flex items-center gap-3">
+        <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-indigo-500 to-purple-400 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+            <i class="fa-solid fa-atom text-white text-sm"></i>
+        </div>
+        <h1 class="text-xl font-medium tracking-tight text-zinc-100">
+            Blast Radius
+        </h1>
+    </div>
+    <div class="text-xs font-medium text-zinc-500 uppercase tracking-wider">Service Mesh Topology</div>
+</header>
+
+<div class="flex flex-1 overflow-hidden p-4 gap-4">
+
+    <aside class="w-80 flex flex-col gap-4 overflow-y-auto z-10 shrink-0">
+
+        <div class="glass-panel p-5 rounded-2xl shadow-sm">
+            <div class="flex items-center gap-2 mb-4">
+                <i class="fa-solid fa-layer-group text-indigo-400"></i>
+                <h2 class="text-sm font-medium text-zinc-200">Register Node</h2>
+            </div>
+
+            <div class="space-y-3">
+                <input id="ms-name" type="text" placeholder="Service Name (e.g. Auth)"
+                       class="w-full px-3 py-2.5 bg-black/20 border border-white/5 rounded-xl text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-indigo-500/50 focus:border-indigo-500/50 transition-all">
+
+                <select id="ms-lang" class="w-full px-3 py-2.5 bg-black/20 border border-white/5 rounded-xl text-sm text-zinc-200 focus:outline-none focus:ring-1 focus:ring-indigo-500/50 focus:border-indigo-500/50 transition-all appearance-none cursor-pointer">
+                    <option value="Java">Java Application</option>
+                    <option value="Python">Python Service</option>
+                    <option value="NodeJS">Node.js Service</option>
+                    <option value="Database">Database Storage</option>
+                    <option value="Other">Infrastructure / Other</option>
+                </select>
+
+                <button onclick="createMicroservice()" class="w-full mt-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 py-2.5 rounded-xl transition-all text-sm font-medium border border-white/5 hover:border-white/10">
+                    Create Service
+                </button>
+            </div>
+        </div>
+
+        <div class="glass-panel p-5 rounded-2xl shadow-sm border-t border-rose-500/10">
+            <div class="flex items-center gap-2 mb-4">
+                <i class="fa-solid fa-crosshairs text-rose-400"></i>
+                <h2 class="text-sm font-medium text-zinc-200">Impact Analysis</h2>
+            </div>
+
+            <div class="space-y-3">
+                <input id="blast-target" type="text" placeholder="Target ID (or select node)" readonly
+                       class="w-full px-3 py-2.5 bg-black/20 border border-white/5 rounded-xl text-sm text-zinc-400 placeholder-zinc-600 focus:outline-none cursor-default">
+
+                <button onclick="analyzeBlastRadius()" class="w-full bg-gradient-to-r from-rose-500/90 to-orange-500/90 hover:from-rose-400 hover:to-orange-400 text-white py-2.5 rounded-xl transition-all text-sm font-medium shadow-lg shadow-rose-500/10">
+                    Analyze Radius
+                </button>
+
+                <button onclick="loadGraph()" class="w-full bg-transparent hover:bg-white/5 text-zinc-400 hover:text-zinc-200 py-2 rounded-xl transition-all text-xs font-medium border border-transparent hover:border-white/5">
+                    Reset Graph View
+                </button>
+            </div>
+        </div>
+
+        <div class="mt-auto px-4 py-3 rounded-xl bg-indigo-500/5 border border-indigo-500/10">
+            <p class="text-[11px] leading-relaxed text-indigo-200/60">
+                <span class="font-medium text-indigo-300">💡 Pro Tip:</span> To link services, click <span class="text-zinc-300">"Add Edge"</span> on the top bar of the canvas, then drag from the dependent node to its target.
+            </p>
+        </div>
+    </aside>
+
+    <main class="flex-1 relative rounded-2xl overflow-hidden shadow-2xl">
+        <div id="mynetwork"></div>
+
+        <div id="info-panel" class="absolute bottom-6 right-6 glass-panel p-5 rounded-2xl shadow-xl hidden w-72 transform transition-all duration-300">
+            <div class="flex justify-between items-start mb-3">
+                <h3 class="text-xs font-semibold uppercase tracking-wider text-indigo-400">Node Details</h3>
+                <button onclick="document.getElementById('info-panel').classList.add('hidden')" class="text-zinc-500 hover:text-zinc-300 transition-colors">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div id="info-text" class="text-sm text-zinc-300 space-y-2"></div>
+        </div>
+    </main>
+</div>
+
+<script>
+    let network = null;
+
+    // Elegant graph options
+    const options = {
+        edges: {
+            width: 1.5,
+            color: { color: '#52525b', highlight: '#f43f5e' }, // zinc-600 and rose-500
+            arrows: { to: { enabled: true, scaleFactor: 0.4 } },
+            smooth: { type: 'continuous', roundness: 0.5 }
+        },
+        physics: {
+            forceAtlas2Based: { gravitationalConstant: -50, centralGravity: 0.005, springLength: 150, springConstant: 0.04 },
+            maxVelocity: 40,
+            solver: 'forceAtlas2Based',
+            timestep: 0.3,
+            stabilization: { iterations: 150 }
+        },
+        interaction: {
+            hover: true,
+            tooltipDelay: 200
+        },
+        manipulation: {
+            enabled: true,
+            addNode: false,
+            addEdge: async function(edgeData, callback) {
+                if (edgeData.from === edgeData.to) {
+                    alert("A service cannot depend on itself.");
+                    callback(null);
+                    return;
+                }
+
+                try {
+                    const response = await fetch('/api/infra/dependencies', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ sourceId: edgeData.from, targetId: edgeData.to })
+                    });
+                    if (response.ok) {
+                        callback(edgeData);
+                    } else {
+                        alert("Failed to save dependency to database.");
+                        callback(null);
+                    }
+                } catch(err) {
+                    console.error(err);
+                    callback(null);
+                }
+            }
+        }
+    };
+
+    async function loadGraph() {
+        try {
+            const response = await fetch('/api/infra/topology');
+            const data = await response.json();
+
+            data.nodes.forEach(n => {
+                n.shape = 'icon';
+                n.icon = { face: '"Font Awesome 6 Free"', weight: "900", size: 35, code: '\uf013', color: '#71717a' }; // Default Gear, zinc-500
+
+                const lang = (n.group || '').toLowerCase();
+                const name = (n.label || '').toLowerCase();
+
+                // Softer palette for icons
+                if (lang.includes('java') || name.includes('java')) {
+                    n.icon.face = '"Font Awesome 6 Brands"'; n.icon.code = '\uf4e4'; n.icon.color = '#fb923c'; // orange-400
+                } else if (lang.includes('python')) {
+                    n.icon.face = '"Font Awesome 6 Brands"'; n.icon.code = '\uf3e2'; n.icon.color = '#fbbf24'; // amber-400
+                } else if (lang.includes('node')) {
+                    n.icon.face = '"Font Awesome 6 Brands"'; n.icon.code = '\uf3d3'; n.icon.color = '#34d399'; // emerald-400
+                } else if (lang.includes('database') || name.includes('db') || name.includes('postgres') || name.includes('neo4j')) {
+                    n.icon.code = '\uf1c0'; n.icon.color = '#60a5fa'; // blue-400
+                } else if (name.includes('auth') || name.includes('sec')) {
+                    n.icon.code = '\uf023'; n.icon.color = '#fb7185'; // rose-400
+                }
+            });
+
+            const container = document.getElementById('mynetwork');
+            const graphData = {
+                nodes: new vis.DataSet(data.nodes),
+                edges: new vis.DataSet(data.edges)
+            };
+
+            if (network) network.destroy();
+            network = new vis.Network(container, graphData, options);
+
+            network.on("click", function (params) {
+                if (params.nodes.length > 0) {
+                    const nodeId = params.nodes[0];
+                    const node = graphData.nodes.get(nodeId);
+
+                    document.getElementById('info-text').innerHTML = `
+                            <div class="flex flex-col gap-1.5">
+                                <span class="text-[10px] text-zinc-500 uppercase tracking-widest">ID</span>
+                                <span class="text-xs font-mono bg-black/30 p-1.5 rounded border border-white/5 truncate" title="${node.id}">${node.id}</span>
+
+                                <span class="text-[10px] text-zinc-500 uppercase tracking-widest mt-2">Name</span>
+                                <span class="text-sm text-zinc-100 font-medium">${node.label}</span>
+
+                                <span class="text-[10px] text-zinc-500 uppercase tracking-widest mt-2">Environment</span>
+                                <span class="text-xs text-zinc-300 inline-flex items-center px-2 py-1 rounded-md bg-white/5 border border-white/5 w-max">${node.group}</span>
+                            </div>
+                        `;
+                    document.getElementById('info-panel').classList.remove('hidden');
+
+                    // Populate target field for analysis
+                    const targetField = document.getElementById('blast-target');
+                    targetField.value = node.id;
+                    targetField.classList.add('ring-1', 'ring-rose-500/50', 'border-rose-500/50');
+                    setTimeout(() => targetField.classList.remove('ring-1', 'ring-rose-500/50', 'border-rose-500/50'), 500);
+                }
+            });
+        } catch (error) {
+            console.error("Error loading graph:", error);
+        }
+    }
+
+    async function createMicroservice() {
+        const name = document.getElementById('ms-name').value;
+        const language = document.getElementById('ms-lang').value;
+
+        if(!name.trim()) return alert("Please provide a service name.");
+
+        await fetch('/api/infra/microservices', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, language })
+        });
+
+        document.getElementById('ms-name').value = '';
+        loadGraph();
+    }
+
+    async function analyzeBlastRadius() {
+        const targetId = document.getElementById('blast-target').value;
+        if(!targetId) return alert("Please select a target node on the graph first.");
+
+        try {
+            const response = await fetch(`/api/infra/blast-radius/${targetId}`);
+            const affectedServices = await response.json();
+
+            const affectedIds = affectedServices.map(s => s.id);
+            affectedIds.push(targetId);
+
+            const nodesToUpdate = [];
+            network.body.data.nodes.forEach(node => {
+                let newColor = '#3f3f46'; // zinc-700 (dimmed state)
+                let newSize = 35;
+
+                if(node.id === targetId) {
+                    newColor = '#f43f5e'; // rose-500 (Epicenter)
+                    newSize = 55;
+                } else if(affectedIds.includes(node.id)) {
+                    newColor = '#fb923c'; // orange-400 (Affected)
+                    newSize = 45;
+                }
+
+                nodesToUpdate.push({
+                    id: node.id,
+                    icon: { ...node.icon, color: newColor, size: newSize }
+                });
+            });
+            network.body.data.nodes.update(nodesToUpdate);
+        } catch (error) {
+            console.error("Error calculating blast radius:", error);
+        }
+    }
+
+    window.onload = loadGraph;
+</script>
+</body>
+</html>
