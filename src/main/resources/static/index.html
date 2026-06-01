@@ -15,24 +15,11 @@
     <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-    <style>
-        body { background-color: #09090b; color: #e4e4e7; background-image: radial-gradient(circle at top right, rgba(79, 70, 229, 0.05), transparent 40%), radial-gradient(circle at bottom left, rgba(225, 29, 72, 0.05), transparent 40%); }
-        #mynetwork { width: 100%; height: 100%; border-radius: 1rem; background: rgba(24, 24, 27, 0.4); border: 1px solid rgba(255, 255, 255, 0.05); box-shadow: inset 0 0 40px rgba(0,0,0,0.5); outline: none; }
-        .glass-panel { background: rgba(24, 24, 27, 0.65); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2); }
-        .vis-network .vis-manipulation, .vis-network .vis-edit-mode, .vis-network .vis-close { display: none !important; }
-        ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 10px; }
-        .no-scrollbar::-webkit-scrollbar { display: none; } .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        @keyframes pulse-border { 0% { border-color: rgba(99, 102, 241, 0.4); box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4); } 70% { border-color: rgba(99, 102, 241, 0.8); box-shadow: 0 0 0 10px rgba(99, 102, 241, 0); } 100% { border-color: rgba(99, 102, 241, 0.4); box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); } }
-        .linking-mode { animation: pulse-border 2s infinite; border-width: 2px; cursor: crosshair !important; }
-        input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
-        input[type="color"]::-webkit-color-swatch { border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; }
-
-        .dropdown-category { font-size: 10px; font-weight: 700; color: #71717a; text-transform: uppercase; letter-spacing: 0.05em; padding: 8px 12px 4px 12px; pointer-events: none; }
-    </style>
+    <link rel="stylesheet" href="/css/style.css">
 </head>
 <body class="h-screen flex flex-col overflow-hidden">
 
-<header class="py-4 px-6 border-b border-white/5 glass-panel flex justify-between items-center z-40">
+<header class="py-4 px-6 border-b border-white/5 glass-panel flex justify-between items-center z-40 shrink-0">
     <div class="flex items-center gap-3">
         <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center shadow-lg shadow-indigo-500/20">
             <i class="fa-solid fa-atom text-white text-sm"></i>
@@ -52,113 +39,97 @@
 
     <aside class="w-80 flex flex-col gap-4 overflow-y-auto shrink-0 z-30 no-scrollbar">
 
-        <div class="glass-panel p-5 rounded-2xl relative z-40 shrink-0">
-            <div class="flex items-center gap-2 mb-4">
-                <i class="fa-solid fa-layer-group text-indigo-400"></i>
-                <h2 class="text-sm font-medium text-zinc-200">Register Node</h2>
-            </div>
-            <div class="space-y-3">
-                <input id="ms-name" type="text" placeholder="Service Name (e.g. Auth)" class="w-full px-3 py-2 bg-black/30 border border-white/10 rounded-xl text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-indigo-500/50 transition-all">
+        <div class="glass-panel p-1 rounded-2xl flex gap-1 z-50 shrink-0">
+            <button id="btn-tab-infra" onclick="switchTab('infra')" class="tab-btn tab-active flex-1 py-2 rounded-xl text-xs font-semibold uppercase tracking-wider"><i class="fa-solid fa-server mr-2"></i>Infrastructure</button>
+            <button id="btn-tab-org" onclick="switchTab('org')" class="tab-btn tab-inactive flex-1 py-2 rounded-xl text-xs font-semibold uppercase tracking-wider"><i class="fa-solid fa-sitemap mr-2"></i>Organization</button>
+        </div>
 
-                <div class="relative" id="custom-select-wrapper">
-                    <input type="hidden" id="ms-lang" value="Java">
-                    <button type="button" id="custom-select-btn" class="w-full flex items-center justify-between px-3 py-2 bg-black/30 border border-white/10 rounded-xl text-sm text-zinc-200 focus:outline-none focus:ring-1 focus:ring-indigo-500/50 transition-all">
-                        <div class="flex items-center gap-3" id="custom-select-text"><i class="fa-brands fa-java text-orange-400 w-4 text-center"></i><span>Java Application</span></div>
-                        <i class="fa-solid fa-chevron-down text-zinc-500 text-[10px] transition-transform duration-200" id="custom-select-arrow"></i>
-                    </button>
+        <div id="tab-infra" class="flex flex-col gap-4 pb-4">
 
-                    <ul id="custom-select-menu" class="absolute z-50 w-full mt-2 bg-zinc-800/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl max-h-72 overflow-y-auto no-scrollbar opacity-0 invisible scale-95 origin-top transition-all duration-200">
-                        <div class="p-1 flex flex-col gap-0.5 pb-2">
-
-                            <div class="dropdown-category">Backend & APIs</div>
-                            <li class="selectable-option px-2.5 py-1.5 rounded-lg hover:bg-white/10 cursor-pointer flex items-center gap-3 text-sm text-zinc-200" data-value="Java"><i class="fa-brands fa-java text-orange-400 w-4 text-center"></i> Java / Spring</li>
-                            <li class="selectable-option px-2.5 py-1.5 rounded-lg hover:bg-white/10 cursor-pointer flex items-center gap-3 text-sm text-zinc-200" data-value="Python"><i class="fa-brands fa-python text-amber-400 w-4 text-center"></i> Python / Django</li>
-                            <li class="selectable-option px-2.5 py-1.5 rounded-lg hover:bg-white/10 cursor-pointer flex items-center gap-3 text-sm text-zinc-200" data-value="NodeJS"><i class="fa-brands fa-node-js text-emerald-400 w-4 text-center"></i> Node.js / Express</li>
-                            <li class="selectable-option px-2.5 py-1.5 rounded-lg hover:bg-white/10 cursor-pointer flex items-center gap-3 text-sm text-zinc-200" data-value="Go"><i class="fa-solid fa-server text-sky-400 w-4 text-center"></i> Go Microservice</li>
-                            <li class="selectable-option px-2.5 py-1.5 rounded-lg hover:bg-white/10 cursor-pointer flex items-center gap-3 text-sm text-zinc-200" data-value="CSharp"><i class="fa-brands fa-windows text-indigo-400 w-4 text-center"></i> C# / .NET Core</li>
-                            <li class="selectable-option px-2.5 py-1.5 rounded-lg hover:bg-white/10 cursor-pointer flex items-center gap-3 text-sm text-zinc-200" data-value="PHP"><i class="fa-brands fa-php text-indigo-300 w-4 text-center"></i> PHP / Laravel</li>
-                            <li class="selectable-option px-2.5 py-1.5 rounded-lg hover:bg-white/10 cursor-pointer flex items-center gap-3 text-sm text-zinc-200" data-value="Ruby"><i class="fa-solid fa-gem text-rose-500 w-4 text-center"></i> Ruby on Rails</li>
-                            <li class="selectable-option px-2.5 py-1.5 rounded-lg hover:bg-white/10 cursor-pointer flex items-center gap-3 text-sm text-zinc-200" data-value="Rust"><i class="fa-solid fa-gear text-orange-500 w-4 text-center"></i> Rust Service</li>
-
-                            <div class="dropdown-category mt-2 border-t border-white/5 pt-2">Databases</div>
-                            <li class="selectable-option px-2.5 py-1.5 rounded-lg hover:bg-white/10 cursor-pointer flex items-center gap-3 text-sm text-zinc-200" data-value="PostgreSQL"><i class="fa-solid fa-database text-blue-400 w-4 text-center"></i> PostgreSQL</li>
-                            <li class="selectable-option px-2.5 py-1.5 rounded-lg hover:bg-white/10 cursor-pointer flex items-center gap-3 text-sm text-zinc-200" data-value="MySQL"><i class="fa-solid fa-database text-sky-300 w-4 text-center"></i> MySQL / MariaDB</li>
-                            <li class="selectable-option px-2.5 py-1.5 rounded-lg hover:bg-white/10 cursor-pointer flex items-center gap-3 text-sm text-zinc-200" data-value="MongoDB"><i class="fa-brands fa-envira text-green-400 w-4 text-center"></i> MongoDB</li>
-                            <li class="selectable-option px-2.5 py-1.5 rounded-lg hover:bg-white/10 cursor-pointer flex items-center gap-3 text-sm text-zinc-200" data-value="Redis"><i class="fa-solid fa-bolt text-red-400 w-4 text-center"></i> Redis Cache</li>
-                            <li class="selectable-option px-2.5 py-1.5 rounded-lg hover:bg-white/10 cursor-pointer flex items-center gap-3 text-sm text-zinc-200" data-value="Neo4j"><i class="fa-solid fa-project-diagram text-blue-400 w-4 text-center"></i> Neo4j Graph DB</li>
-
-                            <div class="dropdown-category mt-2 border-t border-white/5 pt-2">Infrastructure & Brokers</div>
-                            <li class="selectable-option px-2.5 py-1.5 rounded-lg hover:bg-white/10 cursor-pointer flex items-center gap-3 text-sm text-zinc-200" data-value="Kafka"><i class="fa-solid fa-network-wired text-purple-400 w-4 text-center"></i> Apache Kafka</li>
-                            <li class="selectable-option px-2.5 py-1.5 rounded-lg hover:bg-white/10 cursor-pointer flex items-center gap-3 text-sm text-zinc-200" data-value="RabbitMQ"><i class="fa-solid fa-envelope-open-text text-orange-400 w-4 text-center"></i> RabbitMQ</li>
-                            <li class="selectable-option px-2.5 py-1.5 rounded-lg hover:bg-white/10 cursor-pointer flex items-center gap-3 text-sm text-zinc-200" data-value="Gateway"><i class="fa-solid fa-route text-teal-400 w-4 text-center"></i> API Gateway / Proxy</li>
-                            <li class="selectable-option px-2.5 py-1.5 rounded-lg hover:bg-white/10 cursor-pointer flex items-center gap-3 text-sm text-zinc-200" data-value="Kubernetes"><i class="fa-solid fa-dharmachakra text-blue-500 w-4 text-center"></i> Kubernetes Cluster</li>
-                            <li class="selectable-option px-2.5 py-1.5 rounded-lg hover:bg-white/10 cursor-pointer flex items-center gap-3 text-sm text-zinc-200" data-value="Docker"><i class="fa-brands fa-docker text-blue-400 w-4 text-center"></i> Docker Container</li>
-                            <li class="selectable-option px-2.5 py-1.5 rounded-lg hover:bg-white/10 cursor-pointer flex items-center gap-3 text-sm text-zinc-200" data-value="AWS"><i class="fa-brands fa-aws text-orange-400 w-4 text-center"></i> AWS S3 / Cloud</li>
-
-                            <div class="dropdown-category mt-2 border-t border-white/5 pt-2">Frontend & Clients</div>
-                            <li class="selectable-option px-2.5 py-1.5 rounded-lg hover:bg-white/10 cursor-pointer flex items-center gap-3 text-sm text-zinc-200" data-value="React"><i class="fa-brands fa-react text-cyan-400 w-4 text-center"></i> React SPA</li>
-                            <li class="selectable-option px-2.5 py-1.5 rounded-lg hover:bg-white/10 cursor-pointer flex items-center gap-3 text-sm text-zinc-200" data-value="Vue"><i class="fa-brands fa-vuejs text-emerald-400 w-4 text-center"></i> Vue.js SPA</li>
-                            <li class="selectable-option px-2.5 py-1.5 rounded-lg hover:bg-white/10 cursor-pointer flex items-center gap-3 text-sm text-zinc-200" data-value="Angular"><i class="fa-brands fa-angular text-rose-500 w-4 text-center"></i> Angular App</li>
-                            <li class="selectable-option px-2.5 py-1.5 rounded-lg hover:bg-white/10 cursor-pointer flex items-center gap-3 text-sm text-zinc-200" data-value="Mobile"><i class="fa-solid fa-mobile-screen text-indigo-400 w-4 text-center"></i> iOS / Android App</li>
-                        </div>
-                    </ul>
+            <div class="glass-panel p-5 rounded-2xl relative z-40 shrink-0">
+                <div class="flex items-center gap-2 mb-4"><i class="fa-solid fa-layer-group text-indigo-400"></i><h2 class="text-sm font-medium text-zinc-200">Register Node</h2></div>
+                <div class="space-y-3">
+                    <input id="ms-name" type="text" placeholder="Service Name (e.g. Auth)" class="w-full px-3 py-2 bg-black/30 border border-white/10 rounded-xl text-sm text-zinc-200 focus:outline-none focus:border-indigo-500/50">
+                    <div class="relative" id="custom-select-wrapper">
+                        <input type="hidden" id="ms-lang" value="Java">
+                        <button type="button" id="custom-select-btn" class="w-full flex items-center justify-between px-3 py-2 bg-black/30 border border-white/10 rounded-xl text-sm text-zinc-200 focus:outline-none">
+                            <div class="flex items-center gap-3" id="custom-select-text"><i class="fa-brands fa-java text-orange-400 w-4 text-center"></i><span>Java Application</span></div>
+                            <i class="fa-solid fa-chevron-down text-zinc-500 text-[10px]" id="custom-select-arrow"></i>
+                        </button>
+                        <ul id="custom-select-menu" class="absolute z-50 w-full mt-2 bg-zinc-800/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl max-h-72 overflow-y-auto no-scrollbar opacity-0 invisible scale-95 origin-top transition-all duration-200">
+                            <div class="p-1 flex flex-col gap-0.5 pb-2">
+                                <div class="dropdown-category">Backend & APIs</div>
+                                <li class="selectable-option px-2.5 py-1.5 rounded-lg hover:bg-white/10 cursor-pointer flex items-center gap-3 text-sm text-zinc-200" data-value="Java"><i class="fa-brands fa-java text-orange-400 w-4 text-center"></i> Java / Spring</li>
+                                <li class="selectable-option px-2.5 py-1.5 rounded-lg hover:bg-white/10 cursor-pointer flex items-center gap-3 text-sm text-zinc-200" data-value="Python"><i class="fa-brands fa-python text-amber-400 w-4 text-center"></i> Python / Django</li>
+                                <li class="selectable-option px-2.5 py-1.5 rounded-lg hover:bg-white/10 cursor-pointer flex items-center gap-3 text-sm text-zinc-200" data-value="NodeJS"><i class="fa-brands fa-node-js text-emerald-400 w-4 text-center"></i> Node.js</li>
+                                <li class="selectable-option px-2.5 py-1.5 rounded-lg hover:bg-white/10 cursor-pointer flex items-center gap-3 text-sm text-zinc-200" data-value="Go"><i class="fa-solid fa-server text-sky-400 w-4 text-center"></i> Go Microservice</li>
+                                <div class="dropdown-category mt-2 border-t border-white/5 pt-2">Databases</div>
+                                <li class="selectable-option px-2.5 py-1.5 rounded-lg hover:bg-white/10 cursor-pointer flex items-center gap-3 text-sm text-zinc-200" data-value="PostgreSQL"><i class="fa-solid fa-database text-blue-400 w-4 text-center"></i> PostgreSQL</li>
+                                <li class="selectable-option px-2.5 py-1.5 rounded-lg hover:bg-white/10 cursor-pointer flex items-center gap-3 text-sm text-zinc-200" data-value="Redis"><i class="fa-solid fa-bolt text-red-400 w-4 text-center"></i> Redis Cache</li>
+                            </div>
+                        </ul>
+                    </div>
+                    <button onclick="createMicroservice()" class="w-full bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 py-2 rounded-xl text-sm font-medium border border-indigo-500/20">Create Service</button>
                 </div>
-                <button onclick="createMicroservice()" class="w-full bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 py-2 rounded-xl transition-all text-sm font-medium border border-indigo-500/20 hover:border-indigo-500/40">
-                    Create Service
-                </button>
             </div>
-        </div>
 
-        <div class="glass-panel p-5 rounded-2xl relative z-30 border-t border-yellow-500/10 shrink-0">
-            <div class="flex items-center gap-2 mb-3">
-                <i class="fa-solid fa-note-sticky text-yellow-400"></i>
-                <h2 class="text-sm font-medium text-zinc-200">Sticky Note</h2>
-            </div>
-            <div class="space-y-3">
-                <div class="flex gap-2">
-                    <input id="note-color" type="color" value="#facc15" class="w-10 h-10 rounded-lg cursor-pointer bg-transparent border-0 p-0 shadow-lg shrink-0">
-                    <input id="note-title" type="text" placeholder="Title..." class="w-full px-3 py-2 bg-black/30 border border-white/10 rounded-xl text-sm text-zinc-200 focus:outline-none focus:border-yellow-500/50">
+            <div class="glass-panel p-5 rounded-2xl relative z-30 border-t border-yellow-500/10 shrink-0">
+                <div class="flex items-center gap-2 mb-3"><i class="fa-solid fa-note-sticky text-yellow-400"></i><h2 class="text-sm font-medium text-zinc-200">Sticky Note</h2></div>
+                <div class="space-y-3">
+                    <div class="flex gap-2">
+                        <input id="note-color" type="color" value="#facc15" class="w-10 h-10 rounded-lg cursor-pointer bg-transparent border-0 p-0 shrink-0">
+                        <input id="note-title" type="text" placeholder="Title..." class="w-full px-3 py-2 bg-black/30 border border-white/10 rounded-xl text-sm text-zinc-200 focus:outline-none">
+                    </div>
+                    <textarea id="note-text" placeholder="Description..." rows="2" class="w-full px-3 py-2 bg-black/30 border border-white/10 rounded-xl text-sm text-zinc-200 resize-none"></textarea>
+                    <select id="note-target-type" onchange="toggleNoteTarget()" class="w-full px-3 py-2 bg-black/30 border border-white/10 rounded-xl text-sm text-zinc-200">
+                        <option value="NONE">☁️ Free floating (Air)</option>
+                        <option value="SERVICE">🔗 Attach to Selected Node</option>
+                        <option value="CLUSTER">📦 Place inside Cluster</option>
+                    </select>
+                    <select id="note-cluster-select" class="hidden w-full px-3 py-2 bg-black/30 border border-white/10 rounded-xl text-sm text-zinc-200"></select>
+                    <button onclick="createNote()" class="w-full bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-500 py-2 rounded-xl text-sm font-medium border border-yellow-500/20">Add Note</button>
                 </div>
-                <textarea id="note-text" placeholder="Description..." rows="2" class="w-full px-3 py-2 bg-black/30 border border-white/10 rounded-xl text-sm text-zinc-200 resize-none focus:outline-none focus:border-yellow-500/50"></textarea>
+            </div>
 
-                <select id="note-target-type" onchange="toggleNoteTarget()" class="w-full px-3 py-2 bg-black/30 border border-white/10 rounded-xl text-sm text-zinc-200 focus:outline-none">
-                    <option value="NONE">☁️ Free floating (Air)</option>
-                    <option value="SERVICE">🔗 Attach to Selected Node</option>
-                    <option value="CLUSTER">📦 Place inside Cluster</option>
-                </select>
+            <div class="glass-panel p-5 rounded-2xl relative z-10 border-t border-rose-500/10 shrink-0">
+                <div class="flex items-center gap-2 mb-3"><i class="fa-solid fa-bomb text-rose-400"></i><h2 class="text-sm font-medium text-zinc-200">Blast Radius</h2></div>
+                <div class="space-y-3">
+                    <input id="blast-target" type="text" placeholder="Select node..." readonly class="w-full px-3 py-2 bg-black/20 border border-white/5 rounded-xl text-sm text-zinc-500 cursor-default">
+                    <button onclick="analyzeBlastRadius()" class="w-full bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 py-2 rounded-xl text-sm font-medium border border-rose-500/20">Analyze Impact</button>
+                    <button onclick="loadGraph()" class="w-full bg-transparent hover:bg-white/5 text-zinc-500 py-1.5 rounded-xl text-xs">Reset Graph</button>
+                </div>
+            </div>
 
-                <select id="note-cluster-select" class="hidden w-full px-3 py-2 bg-black/30 border border-white/10 rounded-xl text-sm text-zinc-200 focus:outline-none"></select>
-
-                <button onclick="createNote()" class="w-full bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-500 py-2 rounded-xl transition-all text-sm font-medium border border-yellow-500/20 hover:border-yellow-500/40">
-                    Add Note
-                </button>
+            <div class="px-4 py-3 rounded-xl bg-indigo-500/5 border border-indigo-500/10 shadow-sm shrink-0">
+                <p class="text-[11px] leading-relaxed text-indigo-200/60"><span class="font-medium text-indigo-300">💡 Tip:</span> Hold <b>Ctrl / Cmd</b> and click multiple nodes to create a Cluster.</p>
             </div>
         </div>
 
-        <div class="glass-panel p-5 rounded-2xl relative z-10 border-t border-rose-500/10 shrink-0">
-            <div class="flex items-center gap-2 mb-3">
-                <i class="fa-solid fa-bomb text-rose-400"></i>
-                <h2 class="text-sm font-medium text-zinc-200">Blast Radius</h2>
+        <div id="tab-org" class="flex flex-col gap-4 hidden pb-4">
+
+            <div class="glass-panel p-5 rounded-2xl relative z-40 border-t border-purple-500/20 shrink-0">
+                <div class="flex items-center gap-2 mb-4"><i class="fa-solid fa-users text-purple-400"></i><h2 class="text-sm font-medium text-zinc-200">Register Team</h2></div>
+                <div class="space-y-3">
+                    <input id="team-name" type="text" placeholder="Team Name (e.g. Core Billing)" class="w-full px-3 py-2 bg-black/30 border border-white/10 rounded-xl text-sm text-zinc-200">
+                    <button onclick="createTeam()" class="w-full bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 py-2 rounded-xl text-sm font-medium border border-purple-500/20">Create Team</button>
+                </div>
             </div>
-            <div class="space-y-3">
-                <input id="blast-target" type="text" placeholder="Select node..." readonly class="w-full px-3 py-2 bg-black/20 border border-white/5 rounded-xl text-sm text-zinc-500 cursor-default">
-                <button onclick="analyzeBlastRadius()" class="w-full bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 py-2 rounded-xl transition-all text-sm font-medium border border-rose-500/20 hover:border-rose-500/40">
-                    Analyze Impact
-                </button>
-                <button onclick="loadGraph()" class="w-full bg-transparent hover:bg-white/5 text-zinc-500 hover:text-zinc-300 py-1.5 rounded-xl transition-all text-xs border border-transparent hover:border-white/5">
-                    Reset Graph
-                </button>
+
+            <div class="glass-panel p-5 rounded-2xl relative z-30 border-t border-pink-500/20 shrink-0">
+                <div class="flex items-center gap-2 mb-3"><i class="fa-solid fa-user-astronaut text-pink-400"></i><h2 class="text-sm font-medium text-zinc-200">Add Worker</h2></div>
+                <div class="space-y-3">
+                    <input id="worker-name" type="text" placeholder="Worker Name (e.g. John Doe)" class="w-full px-3 py-2 bg-black/30 border border-white/10 rounded-xl text-sm text-zinc-200">
+                    <input id="worker-role" type="text" placeholder="Role (e.g. Senior DevOps)" class="w-full px-3 py-2 bg-black/30 border border-white/10 rounded-xl text-sm text-zinc-200">
+                    <select id="worker-team-select" class="w-full px-3 py-2 bg-black/30 border border-white/10 rounded-xl text-sm text-zinc-200 focus:outline-none"></select>
+                    <button onclick="createWorker()" class="w-full bg-pink-500/10 hover:bg-pink-500/20 text-pink-400 py-2 rounded-xl text-sm font-medium border border-pink-500/20">Hire Worker</button>
+                </div>
+            </div>
+
+            <div class="px-4 py-3 rounded-xl bg-purple-500/5 border border-purple-500/10 shadow-sm shrink-0">
+                <p class="text-[11px] leading-relaxed text-purple-200/60"><span class="font-medium text-purple-300">💡 Hint:</span> To assign a team to a microservice, switch to Infrastructure, click a service on the graph, and use the Assign panel.</p>
             </div>
         </div>
 
-        <div class="mt-auto flex flex-col gap-2 shrink-0 pb-4">
-            <div class="px-4 py-3 rounded-xl bg-indigo-500/5 border border-indigo-500/10 shadow-sm">
-                <p class="text-[11px] leading-relaxed text-indigo-200/60"><span class="font-medium text-indigo-300">💡 Pro Tip 1:</span> Click "Draw Link" on a node, then drag to another to connect them.</p>
-            </div>
-            <div class="px-4 py-3 rounded-xl bg-amber-500/5 border border-amber-500/10 shadow-sm">
-                <p class="text-[11px] leading-relaxed text-amber-200/60"><span class="font-medium text-amber-300">✨ Pro Tip 2:</span> Hold <b>Ctrl / Cmd</b> and click multiple nodes to group them into a Cluster.</p>
-            </div>
-        </div>
     </aside>
 
     <main class="flex-1 relative rounded-2xl shadow-2xl transition-all duration-300 z-10" id="main-canvas-container">
@@ -170,6 +141,15 @@
                 <button onclick="closeAllPanels()" class="text-zinc-500 hover:text-white pointer-events-auto"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <div id="node-info-content" class="mb-5 p-3 bg-black/20 rounded-xl border border-white/5"></div>
+
+            <div id="assign-team-section" class="mb-4 hidden pointer-events-auto border-t border-white/5 pt-3">
+                <h4 class="text-[10px] text-zinc-500 uppercase tracking-widest mb-2">Maintainer Team</h4>
+                <div class="flex gap-2">
+                    <select id="assign-team-select" class="w-full px-2 py-1.5 bg-black/30 border border-white/10 rounded-lg text-xs text-zinc-200"></select>
+                    <button onclick="assignTeamToService()" class="bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 px-3 rounded-lg text-xs border border-indigo-500/30">Assign</button>
+                </div>
+            </div>
+
             <div class="grid grid-cols-2 gap-2 pointer-events-auto">
                 <button onclick="startLinkingMode()" class="flex flex-col items-center justify-center gap-2 p-3 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 rounded-xl border border-indigo-500/20 transition-all hover:-translate-y-0.5"><i class="fa-solid fa-link text-lg"></i><span class="text-[10px] uppercase tracking-wider">Draw Link</span></button>
                 <button onclick="deleteSelectedNode()" class="flex flex-col items-center justify-center gap-2 p-3 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 rounded-xl border border-rose-500/20 transition-all hover:-translate-y-0.5"><i class="fa-solid fa-trash-can text-lg"></i><span class="text-[10px] uppercase tracking-wider">Delete</span></button>
@@ -202,300 +182,17 @@
 </div>
 
 <footer class="py-3 px-6 border-t border-white/5 glass-panel flex justify-between items-center z-40 shrink-0">
-    <div class="text-[10px] font-medium text-zinc-500 uppercase tracking-widest">
-        Blast Radius Analyzer &copy; 2026
-    </div>
+    <div class="text-[10px] font-medium text-zinc-500 uppercase tracking-widest">Blast Radius Analyzer &copy; 2026</div>
     <div class="flex items-center gap-6 text-xs text-zinc-400">
         <span>Designed & Built by <span class="font-semibold text-indigo-400">Mikhail Shupliakou</span></span>
-        <a href="mailto:mikhail.shupliakou@gmail.com" class="flex items-center gap-1.5 hover:text-indigo-300 transition-colors">
-            <i class="fa-solid fa-envelope text-zinc-500"></i> mikhail.shupliakou@gmail.com
-        </a>
+        <a href="mailto:mikhail.shupliakou@gmail.com" class="flex items-center gap-1.5 hover:text-indigo-300 transition-colors"><i class="fa-solid fa-envelope text-zinc-500"></i> mikhail.shupliakou@gmail.com</a>
     </div>
 </footer>
 
-<script>
-    // --- Дропдаун Сервисов ---
-    const selectBtn = document.getElementById('custom-select-btn');
-    const selectMenu = document.getElementById('custom-select-menu');
-    const selectText = document.getElementById('custom-select-text');
-    const hiddenInput = document.getElementById('ms-lang');
+<script src="/js/ui.js"></script>
+<script src="/js/graph.js"></script>
+<script src="/js/infra.js"></script>
+<script src="/js/org.js"></script>
 
-    selectBtn.addEventListener('click', () => {
-        selectMenu.classList.toggle('opacity-0'); selectMenu.classList.toggle('invisible'); selectMenu.classList.toggle('scale-95');
-    });
-
-    document.querySelectorAll('.selectable-option').forEach(item => {
-        item.addEventListener('click', () => {
-            hiddenInput.value = item.getAttribute('data-value');
-            selectText.innerHTML = item.innerHTML;
-            selectMenu.classList.add('opacity-0', 'invisible', 'scale-95');
-        });
-    });
-
-    function toggleNoteTarget() {
-        const type = document.getElementById('note-target-type').value;
-        const clusterSelect = document.getElementById('note-cluster-select');
-        if (type === 'CLUSTER') { clusterSelect.classList.remove('hidden'); }
-        else { clusterSelect.classList.add('hidden'); }
-    }
-
-    let network = null;
-    let selectedNodeId = null;
-    let selectedEdgeId = null;
-    let nodesDataset = null;
-    let edgesDataset = null;
-
-    const options = {
-        edges: { width: 1.5, color: { color: '#52525b', highlight: '#818cf8' }, arrows: { to: { enabled: true, scaleFactor: 0.5 } }, smooth: { type: 'continuous', roundness: 0.5 } },
-        physics: {
-            forceAtlas2Based: {
-                gravitationalConstant: -70, // Чуть усилили отталкивание чужих узлов
-                centralGravity: 0.005,
-                springLength: 150
-            },
-            solver: 'forceAtlas2Based',
-            timestep: 0.3
-        },
-        interaction: { hover: true, tooltipDelay: 200, selectConnectedEdges: false, multiselect: true },
-        manipulation: {
-            enabled: true, addNode: false,
-            addEdge: async function(edgeData, callback) {
-                stopLinkingUI();
-                if (edgeData.from === edgeData.to) return callback(null);
-                try {
-                    const res = await fetch('/api/infra/dependencies', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sourceId: edgeData.from, targetId: edgeData.to }) });
-                    if (res.ok) callback(edgeData); else callback(null);
-                } catch(err) { callback(null); }
-            }
-        }
-    };
-
-    async function loadGraph() {
-        try {
-            const response = await fetch('/api/infra/topology');
-            const data = await response.json();
-
-            const uniqueClusters = {};
-            const clusterSelect = document.getElementById('note-cluster-select');
-            clusterSelect.innerHTML = '<option value="" disabled selected>Select a cluster...</option>';
-
-            // МАГИЯ: Массивы для невидимых центров гравитации
-            const hubNodes = [];
-            const hubEdges = [];
-
-            data.nodes.forEach(n => {
-                // Если это НОТАТКА
-                if (n.type === 'NOTE') {
-                    n.shape = 'box';
-                    n.font = { multi: 'html', color: '#ffffff', size: 12, face: 'Inter' };
-                    n.label = `<b>${n.title}</b>\n${n.text}`;
-                    n.color = { background: n.color + '25', border: n.color, highlight: { border: '#ffffff' } };
-                    n.borderWidth = 1.5;
-                    n.shadow = { enabled: true, color: n.color + '40', size: 10 };
-                }
-                // Если это СЕРВИС
-                else {
-                    n.shape = 'icon'; n.icon = { face: '"Font Awesome 6 Free"', weight: "900", size: 35, code: '\uf013', color: '#71717a' };
-                    const lang = (n.group || '').toLowerCase();
-
-                    if (lang.includes('java')) { n.icon.face = '"Font Awesome 6 Brands"'; n.icon.code = '\uf4e4'; n.icon.color = '#fb923c'; }
-                    else if (lang.includes('python')) { n.icon.face = '"Font Awesome 6 Brands"'; n.icon.code = '\uf3e2'; n.icon.color = '#fbbf24'; }
-                    else if (lang.includes('node')) { n.icon.face = '"Font Awesome 6 Brands"'; n.icon.code = '\uf3d3'; n.icon.color = '#34d399'; }
-                    else if (lang.includes('go')) { n.icon.code = '\uf233'; n.icon.color = '#38bdf8'; }
-                    else if (lang.includes('csharp') || lang.includes('.net')) { n.icon.face = '"Font Awesome 6 Brands"'; n.icon.code = '\uf17a'; n.icon.color = '#818cf8'; }
-                    else if (lang.includes('php')) { n.icon.face = '"Font Awesome 6 Brands"'; n.icon.code = '\uf457'; n.icon.color = '#a78bfa'; }
-                    else if (lang.includes('ruby')) { n.icon.code = '\uf3a5'; n.icon.color = '#f43f5e'; }
-                    else if (lang.includes('rust')) { n.icon.code = '\uf013'; n.icon.color = '#f97316'; }
-                    else if (lang.includes('postgres') || lang.includes('mysql') || lang.includes('database')) { n.icon.code = '\uf1c0'; n.icon.color = '#60a5fa'; }
-                    else if (lang.includes('mongo')) { n.icon.face = '"Font Awesome 6 Brands"'; n.icon.code = '\uf4fa'; n.icon.color = '#4ade80'; }
-                    else if (lang.includes('redis') || lang.includes('cache')) { n.icon.code = '\uf0e7'; n.icon.color = '#f87171'; }
-                    else if (lang.includes('neo4j')) { n.icon.code = '\uf542'; n.icon.color = '#60a5fa'; }
-                    else if (lang.includes('kafka') || lang.includes('rabbit') || lang.includes('broker')) { n.icon.code = '\uf6ff'; n.icon.color = '#c084fc'; }
-                    else if (lang.includes('kubernetes')) { n.icon.code = '\uf655'; n.icon.color = '#3b82f6'; }
-                    else if (lang.includes('docker')) { n.icon.face = '"Font Awesome 6 Brands"'; n.icon.code = '\uf395'; n.icon.color = '#3b82f6'; }
-                    else if (lang.includes('aws') || lang.includes('storage')) { n.icon.face = '"Font Awesome 6 Brands"'; n.icon.code = '\uf375'; n.icon.color = '#fb923c'; }
-                    else if (lang.includes('gateway') || lang.includes('proxy')) { n.icon.code = '\uf362'; n.icon.color = '#2dd4bf'; }
-                    else if (lang.includes('react')) { n.icon.face = '"Font Awesome 6 Brands"'; n.icon.code = '\uf41b'; n.icon.color = '#22d3ee'; }
-                    else if (lang.includes('vue')) { n.icon.face = '"Font Awesome 6 Brands"'; n.icon.code = '\uf41f'; n.icon.color = '#34d399'; }
-                    else if (lang.includes('angular')) { n.icon.face = '"Font Awesome 6 Brands"'; n.icon.code = '\uf420'; n.icon.color = '#e11d48'; }
-                    else if (lang.includes('mobile')) { n.icon.code = '\uf3ce'; n.icon.color = '#a78bfa'; }
-                    else if (lang.includes('frontend')) { n.icon.code = '\uf108'; n.icon.color = '#22d3ee'; }
-                }
-
-                // Сборка Кластеров и Создание Невидимых Центров Гравитации
-                if (n.clusterId) {
-                    if (!uniqueClusters[n.clusterId]) {
-                        uniqueClusters[n.clusterId] = n.clusterName;
-                        clusterSelect.innerHTML += `<option value="${n.clusterId}">${n.clusterName}</option>`;
-
-                        // Создаем абсолютно прозрачный узел в центре
-                        hubNodes.push({
-                            id: 'hub_' + n.clusterId,
-                            shape: 'dot', size: 0, color: 'rgba(0,0,0,0)', label: '', physics: true
-                        });
-                    }
-
-                    // Привязываем сервис к центру кластера жесткой невидимой пружиной
-                    hubEdges.push({
-                        id: 'edge_hub_' + n.id,
-                        from: n.id, to: 'hub_' + n.clusterId,
-                        color: { color: 'rgba(0,0,0,0)', highlight: 'rgba(0,0,0,0)', hover: 'rgba(0,0,0,0)' },
-                        length: 50, // Очень короткая пружина (стягивает узлы вместе)
-                        physics: true, arrows: ''
-                    });
-                }
-            });
-
-            data.edges.forEach(e => {
-                if (e.type === 'RELATES_TO') { e.dashes = [4, 4]; e.arrows = ''; e.color = { color: '#a1a1aa' }; e.width = 1; }
-            });
-
-            // Добавляем невидимые хабы в датасеты графа
-            nodesDataset = new vis.DataSet([...data.nodes, ...hubNodes]);
-            edgesDataset = new vis.DataSet([...data.edges, ...hubEdges]);
-
-            const container = document.getElementById('mynetwork');
-            if (network) network.destroy();
-            network = new vis.Network(container, { nodes: nodesDataset, edges: edgesDataset }, options);
-
-            network.on("beforeDrawing", function (ctx) {
-                const clusters = {};
-                nodesDataset.forEach(node => {
-                    if (node.clusterId && !node.id.startsWith('hub_')) {
-                        if (!clusters[node.clusterId]) clusters[node.clusterId] = { name: node.clusterName, color: node.clusterColor, nodeIds: [] };
-                        clusters[node.clusterId].nodeIds.push(node.id);
-                    }
-                });
-
-                for (const clusterId in clusters) {
-                    const cluster = clusters[clusterId];
-                    if (cluster.nodeIds.length === 0) continue;
-
-                    const positions = network.getPositions(cluster.nodeIds);
-                    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-                    let hasPositions = false;
-                    for (const id in positions) {
-                        const pos = positions[id];
-                        if (pos.x === undefined) continue;
-                        hasPositions = true;
-                        const padding = 55;
-                        if (pos.x - padding < minX) minX = pos.x - padding; if (pos.x + padding > maxX) maxX = pos.x + padding;
-                        if (pos.y - padding < minY) minY = pos.y - padding; if (pos.y + padding > maxY) maxY = pos.y + padding;
-                    }
-
-                    if (!hasPositions) continue;
-                    const hex = cluster.color.replace('#', '');
-                    const r = parseInt(hex.substring(0, 2), 16) || 100, g = parseInt(hex.substring(2, 4), 16) || 100, b = parseInt(hex.substring(4, 6), 16) || 100;
-
-                    ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.08)`; ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, 0.6)`; ctx.lineWidth = 2; ctx.setLineDash([6, 6]);
-                    ctx.beginPath(); if (ctx.roundRect) { ctx.roundRect(minX, minY, maxX - minX, maxY - minY, 16); } else { ctx.rect(minX, minY, maxX - minX, maxY - minY); }
-                    ctx.fill(); ctx.stroke(); ctx.setLineDash([]);
-
-                    ctx.font = "600 12px Inter, sans-serif"; const textWidth = ctx.measureText(cluster.name).width;
-                    ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.85)`; ctx.beginPath();
-                    if (ctx.roundRect) { ctx.roundRect(minX, minY - 24, textWidth + 24, 24, [10, 10, 0, 0]); } else { ctx.fillRect(minX, minY - 24, textWidth + 24, 24); }
-                    ctx.fill();
-                    ctx.fillStyle = "#ffffff"; ctx.fillText(cluster.name, minX + 12, minY - 8);
-                }
-            });
-
-            network.on("click", function (params) {
-                closeAllPanels();
-
-                // Фильтруем выделенные узлы (игнорируем невидимые хабы)
-                const realSelectedNodes = params.nodes.filter(id => !String(id).startsWith('hub_'));
-
-                if (realSelectedNodes.length > 1) {
-                    document.getElementById('cluster-action-panel').classList.remove('opacity-0', 'invisible', 'translate-y-4', 'pointer-events-none');
-                }
-                else if (realSelectedNodes.length === 1) {
-                    selectedNodeId = realSelectedNodes[0];
-                    const node = nodesDataset.get(selectedNodeId);
-
-                    let content = '';
-                    if (node.type === 'NOTE') {
-                        content = `<div class="text-[10px] text-zinc-500 uppercase tracking-widest mb-1">Sticky Note</div><div class="text-base font-bold" style="color: ${node.color}">${node.title}</div>`;
-                    } else {
-                        let clusterBadge = node.clusterName ? `<div class="mt-2 text-[10px] text-zinc-500 uppercase tracking-widest mb-1">Cluster</div><div class="text-xs text-white bg-black/40 px-2 py-1 rounded w-max border border-white/10" style="border-left: 3px solid ${node.clusterColor}">${node.clusterName}</div>` : '';
-                        content = `<div class="text-[10px] text-zinc-500 uppercase tracking-widest mb-1">Service</div><div class="text-base text-zinc-100 font-bold">${node.label}</div>${clusterBadge}`;
-                    }
-
-                    document.getElementById('node-info-content').innerHTML = content;
-                    document.getElementById('action-panel').classList.remove('opacity-0', 'invisible', 'translate-y-4', 'pointer-events-none');
-                    document.getElementById('blast-target').value = node.id;
-                }
-                else if (params.edges.length === 1 && !String(params.edges[0]).startsWith('edge_hub_')) {
-                    document.getElementById('edge-action-panel').classList.remove('opacity-0', 'invisible', 'translate-y-4', 'pointer-events-none');
-                    selectedEdgeId = params.edges[0];
-                }
-            });
-        } catch (error) { console.error(error); }
-    }
-
-    function closeAllPanels() {
-        selectedNodeId = null; selectedEdgeId = null;
-        ['action-panel', 'edge-action-panel', 'cluster-action-panel'].forEach(id => { document.getElementById(id).classList.add('opacity-0', 'invisible', 'translate-y-4', 'pointer-events-none'); });
-    }
-
-    async function createNote() {
-        const title = document.getElementById('note-title').value;
-        const text = document.getElementById('note-text').value;
-        const color = document.getElementById('note-color').value;
-        const targetType = document.getElementById('note-target-type').value;
-        let targetId = null;
-
-        if (!title.trim()) return alert("Enter note title!");
-
-        if (targetType === 'SERVICE') {
-            if (!selectedNodeId) return alert("Select a Service node on the graph first!");
-            const node = nodesDataset.get(selectedNodeId);
-            if (node.type === 'NOTE') return alert("You cannot attach a note to another note!");
-            targetId = selectedNodeId;
-        } else if (targetType === 'CLUSTER') {
-            targetId = document.getElementById('note-cluster-select').value;
-            if (!targetId) return alert("Select a cluster from the list!");
-        }
-
-        await fetch('/api/infra/notes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title, text, color, targetType, targetId }) });
-        document.getElementById('note-title').value = ''; document.getElementById('note-text').value = ''; loadGraph();
-    }
-
-    async function createCluster() {
-        const name = document.getElementById('cluster-name').value;
-        const color = document.getElementById('cluster-color').value;
-        // Берем только реальные сервисы, исключая невидимые хабы
-        const selectedNodes = network.getSelectedNodes().filter(id => !String(id).startsWith('hub_'));
-
-        if (!name.trim() || selectedNodes.length < 2) return alert("Select at least 2 nodes and enter a name.");
-        await fetch('/api/infra/clusters', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, color, nodeIds: selectedNodes }) });
-        closeAllPanels(); document.getElementById('cluster-name').value = ''; loadGraph();
-    }
-
-    async function deleteSelectedNode() { if (!selectedNodeId) return; await fetch(`/api/infra/microservices/${selectedNodeId}`, { method: 'DELETE' }); closeAllPanels(); loadGraph(); }
-    async function deleteSelectedEdge() { if (!selectedEdgeId) return; const edge = edgesDataset.get(selectedEdgeId); await fetch(`/api/infra/dependencies/${edge.from}/${edge.to}`, { method: 'DELETE' }); closeAllPanels(); loadGraph(); }
-    async function createMicroservice() { const name = document.getElementById('ms-name').value; const lang = document.getElementById('ms-lang').value; if(!name.trim()) return; await fetch('/api/infra/microservices', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, language: lang }) }); document.getElementById('ms-name').value = ''; loadGraph(); }
-
-    function startLinkingMode() { network.addEdgeMode(); closeAllPanels(); document.getElementById('main-canvas-container').classList.add('linking-mode'); document.getElementById('linking-toast').classList.remove('opacity-0', '-translate-y-10'); }
-    function cancelLinking() { network.disableEditMode(); stopLinkingUI(); }
-    function stopLinkingUI() { document.getElementById('main-canvas-container').classList.remove('linking-mode'); document.getElementById('linking-toast').classList.add('opacity-0', '-translate-y-10'); }
-
-    async function analyzeBlastRadius() {
-        const targetId = document.getElementById('blast-target').value; if(!targetId) return;
-        const res = await fetch(`/api/infra/blast-radius/${targetId}`); const affected = await res.json();
-        const affectedIds = affected.map(s => s.id); affectedIds.push(targetId);
-        const nodesToUpdate = [];
-        nodesDataset.forEach(node => {
-            // Игнорируем нотатки и невидимые хабы
-            if(node.type === 'NOTE' || String(node.id).startsWith('hub_')) return;
-
-            let newColor = '#3f3f46'; let newSize = 35;
-            if(node.id === targetId) { newColor = '#f43f5e'; newSize = 60; } else if(affectedIds.includes(node.id)) { newColor = '#fb923c'; newSize = 50; }
-            nodesToUpdate.push({ id: node.id, icon: { ...node.icon, color: newColor, size: newSize } });
-        });
-        nodesDataset.update(nodesToUpdate);
-    }
-
-    window.onload = loadGraph;
-</script>
 </body>
 </html>
