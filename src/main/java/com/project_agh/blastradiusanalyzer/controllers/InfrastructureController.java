@@ -1,7 +1,9 @@
 package com.project_agh.blastradiusanalyzer.controllers;
 
+import com.project_agh.blastradiusanalyzer.dtos.ClusterDto;
 import com.project_agh.blastradiusanalyzer.dtos.DependencyDto;
 import com.project_agh.blastradiusanalyzer.dtos.MicroserviceDto;
+import com.project_agh.blastradiusanalyzer.dtos.NoteDto;
 import com.project_agh.blastradiusanalyzer.models.Microservice;
 import com.project_agh.blastradiusanalyzer.services.MicroserviceService;
 import org.springframework.http.ResponseEntity;
@@ -43,5 +45,29 @@ public class InfrastructureController {
     @GetMapping("/topology")
     public Map<String, Object> getTopology() {
         return service.getTopology();
+    }
+
+    @DeleteMapping("/microservices/{id}")
+    public ResponseEntity<?> deleteMicroservice(@PathVariable String id) {
+        service.deleteMicroservice(id);
+        return ResponseEntity.ok().build();
+    }
+
+    @DeleteMapping("/dependencies/{sourceId}/{targetId}")
+    public ResponseEntity<?> deleteDependency(@PathVariable String sourceId, @PathVariable String targetId) {
+        service.deleteDependency(sourceId, targetId);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/clusters")
+    public ResponseEntity<?> createCluster(@RequestBody ClusterDto dto) {
+        service.createCluster(dto.name(), dto.color(), dto.nodeIds());
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/notes")
+    public ResponseEntity<?> createNote(@RequestBody NoteDto dto) {
+        service.createNote(dto.title(), dto.text(), dto.color(), dto.targetType(), dto.targetId());
+        return ResponseEntity.ok().build();
     }
 }
