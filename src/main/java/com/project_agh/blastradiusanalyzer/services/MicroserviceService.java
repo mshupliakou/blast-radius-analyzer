@@ -31,4 +31,18 @@ public class MicroserviceService {
     public Map<String, Object> getTopology() {
         return repository.getTopology();
     }
+
+    public void deleteDependency(String sourceId, String targetId) {
+        repository.deleteDependency(sourceId, targetId);
+    }
+
+    public void createCluster(String name, String color, List<String> nodeIds) {
+        repository.createCluster(name, color, nodeIds);
+    }
+
+    public void deleteMicroservice(String id) { repository.deleteNode(id); } // теперь это deleteNode
+
+    public void createNote(String title, String text, String color, String targetType, String targetId) {
+        repository.addNote(title, text, color, targetType, targetId);
+    }
 }
