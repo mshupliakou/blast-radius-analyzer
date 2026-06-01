@@ -38,6 +38,7 @@ class MicroserviceRepositoryImpl implements MicroserviceRepository {
         }
     }
 
+
     @Override
     public void createDependency(String sourceId, String targetId) {
         try (Session session = driver.session(sessionConfig)) {
@@ -127,13 +128,6 @@ class MicroserviceRepositoryImpl implements MicroserviceRepository {
         }
     }
 
-    @Override
-    public void deleteMicroservice(String id) {
-        try (Session session = driver.session(sessionConfig)) {
-            String cypher = "MATCH (m:Microservice {id: $id}) DETACH DELETE m";
-            session.run(cypher, Values.parameters("id", id));
-        }
-    }
 
     @Override
     public void deleteDependency(String sourceId, String targetId) {
@@ -194,6 +188,18 @@ class MicroserviceRepositoryImpl implements MicroserviceRepository {
             }
 
             session.run(cypher, Values.parameters("title", title, "text", text, "color", color, "targetId", targetId));
+        }
+    }
+
+    @Override
+    public void assignTeamToService(String serviceId, String teamId) {
+        try (Session session = driver.session(sessionConfig)) {
+            String cypher = """
+                MATCH (m:Microservice {id: $serviceId})
+                MATCH (t:Team {id: $teamId})
+                MERGE (m)-[:MAINTAINED_BY]->(t)
+                """;
+            session.run(cypher, Values.parameters("serviceId", serviceId, "teamId", teamId));
         }
     }
 }

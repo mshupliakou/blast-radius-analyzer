@@ -49,7 +49,7 @@ public class InfrastructureController {
 
     @DeleteMapping("/microservices/{id}")
     public ResponseEntity<?> deleteMicroservice(@PathVariable String id) {
-        service.deleteMicroservice(id);
+        service.deleteNode(id);
         return ResponseEntity.ok().build();
     }
 
