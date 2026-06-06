@@ -38,7 +38,6 @@ class MicroserviceRepositoryImpl implements MicroserviceRepository {
         }
     }
 
-
     @Override
     public void createDependency(String sourceId, String targetId) {
         try (Session session = driver.session(sessionConfig)) {
@@ -82,6 +81,7 @@ class MicroserviceRepositoryImpl implements MicroserviceRepository {
         try (Session session = driver.session(sessionConfig)) {
             List<Map<String, String>> nodes = new ArrayList<>();
 
+            // 1. Микросервисы
             String msCypher = "MATCH (m:Microservice) OPTIONAL MATCH (m)-[:BELONGS_TO]->(c:Cluster) RETURN m.id AS id, m.name AS label, m.language AS group, c.id AS clusterId, c.name AS clusterName, c.color AS clusterColor";
             var msResult = session.run(msCypher);
             while (msResult.hasNext()) {
@@ -99,6 +99,7 @@ class MicroserviceRepositoryImpl implements MicroserviceRepository {
                 nodes.add(nodeData);
             }
 
+            // 2. Нотатки
             String noteCypher = "MATCH (n:Note) OPTIONAL MATCH (n)-[:BELONGS_TO]->(c:Cluster) RETURN n.id AS id, n.title AS title, n.text AS text, n.color AS color, c.id AS clusterId, c.name AS clusterName, c.color AS clusterColor";
             var noteResult = session.run(noteCypher);
             while (noteResult.hasNext()) {
@@ -108,7 +109,7 @@ class MicroserviceRepositoryImpl implements MicroserviceRepository {
                 nodeData.put("title", record.get("title").asString());
                 nodeData.put("text", record.get("text").asString());
                 nodeData.put("color", record.get("color").asString());
-                nodeData.put("type", "NOTE"); // Помечаем, что это нотатка
+                nodeData.put("type", "NOTE");
                 if (!record.get("clusterId").isNull()) {
                     nodeData.put("clusterId", record.get("clusterId").asString());
                     nodeData.put("clusterName", record.get("clusterName").asString());
@@ -117,17 +118,48 @@ class MicroserviceRepositoryImpl implements MicroserviceRepository {
                 nodes.add(nodeData);
             }
 
-            String edgesCypher = "MATCH (source)-[r:DEPENDS_ON|RELATES_TO]->(target) RETURN source.id AS from, target.id AS to, type(r) AS type";
+            // 3. Команды (Универсальное извлечение ID для совместимости с TeamController)
+            String teamCypher = "MATCH (t:Team) RETURN coalesce(toString(t.id), toString(id(t))) AS id, coalesce(t.name, 'Unnamed Team') AS name";
+            var teamResult = session.run(teamCypher);
+            while (teamResult.hasNext()) {
+                Record r = teamResult.next();
+                Map<String, String> n = new java.util.HashMap<>();
+                n.put("id", r.get("id").asString());
+                n.put("label", r.get("name").asString());
+                n.put("group", "Team");
+                n.put("type", "TEAM");
+                nodes.add(n);
+            }
+
+            // 4. Работники (Универсальное извлечение ID)
+            String workerCypher = "MATCH (w:Worker) RETURN coalesce(toString(w.id), toString(id(w))) AS id, coalesce(w.name, 'Unknown') AS name, coalesce(w.role, 'Worker') AS role";
+            var workerResult = session.run(workerCypher);
+            while (workerResult.hasNext()) {
+                Record r = workerResult.next();
+                Map<String, String> n = new java.util.HashMap<>();
+                n.put("id", r.get("id").asString());
+                n.put("label", r.get("name").asString());
+                n.put("group", r.get("role").asString());
+                n.put("type", "WORKER");
+                nodes.add(n);
+            }
+
+            // 5. Все связи (Универсальное извлечение любых типов связей, включая WORKS_IN и MAINTAINED_BY)
+            String edgesCypher = "MATCH (source)-[r]->(target) RETURN coalesce(toString(source.id), toString(id(source))) AS from, coalesce(toString(target.id), toString(id(target))) AS to, type(r) AS type";
             var edgesResult = session.run(edgesCypher);
             List<Map<String, String>> edges = new ArrayList<>();
             while (edgesResult.hasNext()) {
                 Record record = edgesResult.next();
-                edges.add(java.util.Map.of("from", record.get("from").asString(), "to", record.get("to").asString(), "type", record.get("type").asString()));
+                edges.add(java.util.Map.of(
+                        "from", record.get("from").asString(),
+                        "to", record.get("to").asString(),
+                        "type", record.get("type").asString()
+                ));
             }
+
             return java.util.Map.of("nodes", nodes, "edges", edges);
         }
     }
-
 
     @Override
     public void deleteDependency(String sourceId, String targetId) {
@@ -166,6 +198,7 @@ class MicroserviceRepositoryImpl implements MicroserviceRepository {
             ));
         }
     }
+
     @Override
     public void deleteNode(String id) {
         try (Session session = driver.session(sessionConfig)) {
@@ -182,7 +215,6 @@ class MicroserviceRepositoryImpl implements MicroserviceRepository {
             if ("SERVICE".equals(targetType) && targetId != null) {
                 cypher += "WITH n MATCH (t:Microservice {id: $targetId}) CREATE (n)-[:RELATES_TO]->(t)";
             }
-
             else if ("CLUSTER".equals(targetType) && targetId != null) {
                 cypher += "WITH n MATCH (t:Cluster {id: $targetId}) CREATE (n)-[:BELONGS_TO]->(t)";
             }
@@ -196,7 +228,8 @@ class MicroserviceRepositoryImpl implements MicroserviceRepository {
         try (Session session = driver.session(sessionConfig)) {
             String cypher = """
                 MATCH (m:Microservice {id: $serviceId})
-                MATCH (t:Team {id: $teamId})
+                MATCH (t:Team)
+                WHERE toString(t.id) = $teamId OR toString(id(t)) = $teamId
                 MERGE (m)-[:MAINTAINED_BY]->(t)
                 """;
             session.run(cypher, Values.parameters("serviceId", serviceId, "teamId", teamId));

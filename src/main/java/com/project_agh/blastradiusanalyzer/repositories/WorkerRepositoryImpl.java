@@ -20,8 +20,10 @@ class WorkerRepositoryImpl implements WorkerRepository {
     @Override
     public void addWorker(String name, String role, String teamId) {
         try (Session session = driver.session(sessionConfig)) {
+            // Ищем команду либо по кастомному UUID, либо по встроенному ID Neo4j
             String cypher = """
-                MATCH (t:Team {id: $teamId})
+                MATCH (t:Team)
+                WHERE toString(t.id) = $teamId OR toString(id(t)) = $teamId
                 CREATE (w:Worker {id: randomUUID(), name: $name, role: $role})
                 CREATE (w)-[:WORKS_IN]->(t)
                 """;
