@@ -16,58 +16,60 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/infra")
 public class InfrastructureController {
-
     private final MicroserviceService service;
 
-    public InfrastructureController(MicroserviceService service) {
-        this.service = service;
-    }
+    public InfrastructureController(MicroserviceService service) { this.service = service; }
 
     @PostMapping("/microservices")
-    public ResponseEntity<String> createMicroservice(@RequestBody MicroserviceDto dto) {
-        String newId = UUID.randomUUID().toString();
-        Microservice ms = new Microservice(newId, dto.name(), dto.language());
-        service.createMicroservice(ms);
-        return ResponseEntity.ok("Created with ID: " + newId);
-    }
-
-    @PostMapping("/dependencies")
-    public ResponseEntity<?> createDependency(@RequestBody DependencyDto dto) {
-        service.addDependency(dto.sourceId(), dto.targetId());
+    public ResponseEntity<String> createMicroservice(@RequestBody MicroserviceDto dto, @RequestHeader("Project-Id") String projectId) {
+        Microservice ms = new Microservice(UUID.randomUUID().toString(), dto.name(), dto.language());
+        service.createMicroservice(ms, projectId);
         return ResponseEntity.ok().build();
     }
 
-    @GetMapping("/blast-radius/{targetId}")
-    public List<Microservice> getBlastRadius(@PathVariable String targetId) {
-        return service.analyzeBlastRadius(targetId);
-    }
-
-    @GetMapping("/topology")
-    public Map<String, Object> getTopology() {
-        return service.getTopology();
-    }
-
-    @DeleteMapping("/microservices/{id}")
-    public ResponseEntity<?> deleteMicroservice(@PathVariable String id) {
-        service.deleteNode(id);
+    @PostMapping("/dependencies")
+    public ResponseEntity<?> createDependency(@RequestBody DependencyDto dto, @RequestHeader("Project-Id") String projectId) {
+        service.addDependency(dto.sourceId(), dto.targetId(), projectId);
         return ResponseEntity.ok().build();
     }
 
     @DeleteMapping("/dependencies/{sourceId}/{targetId}")
-    public ResponseEntity<?> deleteDependency(@PathVariable String sourceId, @PathVariable String targetId) {
-        service.deleteDependency(sourceId, targetId);
+    public ResponseEntity<?> deleteDependency(@PathVariable String sourceId, @PathVariable String targetId, @RequestHeader("Project-Id") String projectId) {
+        service.deleteDependency(sourceId, targetId, projectId);
+        return ResponseEntity.ok().build();
+    }
+
+    @DeleteMapping("/microservices/{id}")
+    public ResponseEntity<?> deleteNode(@PathVariable String id, @RequestHeader("Project-Id") String projectId) {
+        service.deleteNode(id, projectId);
         return ResponseEntity.ok().build();
     }
 
     @PostMapping("/clusters")
-    public ResponseEntity<?> createCluster(@RequestBody ClusterDto dto) {
-        service.createCluster(dto.name(), dto.color(), dto.nodeIds());
+    public ResponseEntity<?> createCluster(@RequestBody ClusterDto dto, @RequestHeader("Project-Id") String projectId) {
+        service.createCluster(dto.name(), dto.color(), dto.nodeIds(), projectId);
         return ResponseEntity.ok().build();
     }
 
     @PostMapping("/notes")
-    public ResponseEntity<?> createNote(@RequestBody NoteDto dto) {
-        service.createNote(dto.title(), dto.text(), dto.color(), dto.targetType(), dto.targetId());
+    public ResponseEntity<?> createNote(@RequestBody NoteDto dto, @RequestHeader("Project-Id") String projectId) {
+        service.createNote(dto.title(), dto.text(), dto.color(), dto.targetType(), dto.targetId(), projectId);
         return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/services/{serviceId}/assign-team/{teamId}")
+    public ResponseEntity<?> assignTeam(@PathVariable String serviceId, @PathVariable String teamId, @RequestHeader("Project-Id") String projectId) {
+        service.assignTeamToService(serviceId, teamId, projectId);
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/blast-radius/{targetId}")
+    public List<Microservice> getBlastRadius(@PathVariable String targetId, @RequestHeader("Project-Id") String projectId) {
+        return service.analyzeBlastRadius(targetId, projectId);
+    }
+
+    @GetMapping("/topology")
+    public Map<String, Object> getTopology(@RequestHeader("Project-Id") String projectId) {
+        return service.getTopology(projectId);
     }
 }
