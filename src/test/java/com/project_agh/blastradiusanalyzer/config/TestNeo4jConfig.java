@@ -3,16 +3,16 @@ package com.project_agh.blastradiusanalyzer.config;
 import org.mockito.Mockito;
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.SessionConfig;
-import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Profile;
+import org.springframework.context.annotation.Configuration;
 
-@TestConfiguration
-@Profile("mock-neo4j")
+@Configuration
+@ConditionalOnProperty(name = "neo4j.enabled", havingValue = "false")
 public class TestNeo4jConfig {
 
     @Bean
-    public Driver mockNeo4jDriver() {
+    public Driver neo4jDriver() {
         return Mockito.mock(Driver.class);
     }
 

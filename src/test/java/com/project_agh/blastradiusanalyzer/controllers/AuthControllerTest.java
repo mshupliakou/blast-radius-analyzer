@@ -1,7 +1,6 @@
 package com.project_agh.blastradiusanalyzer.controllers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.project_agh.blastradiusanalyzer.config.TestNeo4jConfig;
 import com.project_agh.blastradiusanalyzer.dtos.AuthRequest;
 import com.project_agh.blastradiusanalyzer.models.User;
 import com.project_agh.blastradiusanalyzer.repositories.interfaces.UserRepository;
@@ -10,8 +9,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.Import;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -26,8 +23,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
-@ActiveProfiles("mock-neo4j")
-@Import(TestNeo4jConfig.class)
 class AuthControllerTest {
 
     @Autowired

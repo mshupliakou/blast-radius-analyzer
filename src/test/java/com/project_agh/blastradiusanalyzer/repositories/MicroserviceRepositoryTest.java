@@ -32,6 +32,7 @@ class MicroserviceRepositoryTest {
 
     @DynamicPropertySource
     static void neo4jProperties(DynamicPropertyRegistry registry) {
+        registry.add("neo4j.enabled", () -> "true");
         registry.add("NEO4J_URI", neo4j::getBoltUrl);
         registry.add("NEO4J_USERNAME", () -> "neo4j");
         registry.add("NEO4J_PASSWORD", () -> "testpass");

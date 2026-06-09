@@ -6,11 +6,11 @@ import org.neo4j.driver.GraphDatabase;
 import org.neo4j.driver.SessionConfig;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Profile;
 
 @Configuration
-@Profile("!mock-neo4j")
+@ConditionalOnProperty(name = "neo4j.enabled", havingValue = "true", matchIfMissing = true)
 public class Neo4jConfig {
 
     @Value("${NEO4J_URI:neo4j://localhost:7687}")
