@@ -15,13 +15,13 @@ public class MicroserviceService {
         this.repository = repository;
     }
 
-    public void createMicroservice(Microservice microservice) { repository.addMicroservice(microservice); }
-    public void addDependency(String sourceId, String targetId) { repository.createDependency(sourceId, targetId); }
-    public void deleteDependency(String sourceId, String targetId) { repository.deleteDependency(sourceId, targetId); }
-    public void deleteNode(String id) { repository.deleteNode(id); }
-    public void createCluster(String name, String color, List<String> nodeIds) { repository.createCluster(name, color, nodeIds); }
-    public void createNote(String title, String text, String color, String targetType, String targetId) { repository.addNote(title, text, color, targetType, targetId); }
-    public void assignTeamToService(String serviceId, String teamId) { repository.assignTeamToService(serviceId, teamId); }
-    public List<Microservice> analyzeBlastRadius(String targetId) { return repository.getBlastRadius(targetId); }
-    public Map<String, Object> getTopology() { return repository.getTopology(); }
+    public void createMicroservice(Microservice microservice, String projectId) { repository.addMicroservice(microservice, projectId); }
+    public void addDependency(String sourceId, String targetId, String projectId) { repository.createDependency(sourceId, targetId, projectId); }
+    public void deleteDependency(String sourceId, String targetId, String projectId) { repository.deleteDependency(sourceId, targetId, projectId); }
+    public void deleteNode(String id, String projectId) { repository.deleteNode(id, projectId); }
+    public void createCluster(String name, String color, List<String> nodeIds, String projectId) { repository.createCluster(name, color, nodeIds, projectId); }
+    public void createNote(String title, String text, String color, String targetType, String targetId, String projectId) { repository.addNote(title, text, color, targetType, targetId, projectId); }
+    public void assignTeamToService(String serviceId, String teamId, String projectId) { repository.assignTeamToService(serviceId, teamId, projectId); }
+    public List<Microservice> analyzeBlastRadius(String targetId, String projectId) { return repository.getBlastRadius(targetId, projectId); }
+    public Map<String, Object> getTopology(String projectId) { return repository.getTopology(projectId); }
 }

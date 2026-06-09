@@ -22,4 +22,10 @@ public class ProjectController {
     public ResponseEntity<?> createProject(@RequestBody ProjectDto dto, Principal principal) {
         return ResponseEntity.ok(projectService.createProject(dto.name(), principal.getName()));
     }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteProject(@PathVariable String id, Principal principal) {
+        projectService.deleteProject(id, principal.getName());
+        return ResponseEntity.ok().build();
+    }
 }

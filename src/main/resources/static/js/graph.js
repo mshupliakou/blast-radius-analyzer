@@ -11,10 +11,9 @@ const graphOptions = {
             stopLinkingUI();
             if (edgeData.from === edgeData.to) return callback(null);
             try {
-                const token = localStorage.getItem('jwt');
                 const res = await fetch('/api/infra/dependencies', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                    headers: getAuthHeaders(),
                     body: JSON.stringify({ sourceId: edgeData.from, targetId: edgeData.to })
                 });
                 if (res.ok) callback(edgeData); else callback(null);
@@ -24,16 +23,21 @@ const graphOptions = {
 };
 
 async function loadGraph() {
+    if (!appState.currentProjectId) {
+        showProjectSelector();
+        return;
+    }
+
     try {
         const token = localStorage.getItem('jwt');
-        if (!token) return; // Ждем пока залогинится
+        if (!token) return;
 
         const response = await fetch('/api/infra/topology', {
-            headers: { 'Authorization': 'Bearer ' + token }
+            headers: getAuthHeaders()
         });
 
         if (response.status === 401 || response.status === 403) {
-            logout(); // Токен протух
+            logout();
             return;
         }
 
@@ -200,6 +204,54 @@ async function loadGraph() {
     } catch (error) { console.error(error); }
 }
 
+function exportPng() {
+    if (!appState.network) return alert('Load a graph first');
+
+    appState.network.redraw();
+
+    let canvas;
+    const container = document.getElementById('mynetwork');
+
+    if (appState.network.body && appState.network.body.canvas && appState.network.body.canvas.canvas) {
+        canvas = appState.network.body.canvas.canvas;
+    } else if (container) {
+        const allC = container.querySelectorAll('canvas');
+        if (allC.length > 0) canvas = allC[allC.length - 1];
+    }
+    if (!canvas || canvas.width === 0 || canvas.height === 0) {
+        return alert('Canvas not available - draw something on the graph first');
+    }
+
+    const exportCanvas = document.createElement('canvas');
+    exportCanvas.width = canvas.width;
+    exportCanvas.height = canvas.height;
+    const ctx = exportCanvas.getContext('2d');
+
+    const bgColor = getComputedStyle(document.body).backgroundColor || '#09090b';
+    ctx.fillStyle = bgColor;
+    ctx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
+
+    ctx.drawImage(canvas, 0, 0);
+
+    const link = document.createElement('a');
+    link.download = 'blast-radius-' + (appState.currentProjectName || 'graph') + '.png';
+    link.href = exportCanvas.toDataURL('image/png');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
 window.onload = () => {
-    if (localStorage.getItem('jwt')) loadGraph();
+    const jwt = localStorage.getItem('jwt');
+    if (jwt) {
+        const savedProjectId = localStorage.getItem('currentProjectId');
+        const savedProjectName = localStorage.getItem('currentProjectName');
+        if (savedProjectId) {
+            appState.currentProjectId = savedProjectId;
+            appState.currentProjectName = savedProjectName;
+            loadGraph();
+        } else {
+            showProjectSelector();
+        }
+    }
 };

@@ -11,4 +11,5 @@ public class ProjectService {
     public ProjectService(ProjectRepository repository) { this.repository = repository; }
     public Project createProject(String name, String username) { return repository.createProject(name, username); }
     public List<Project> getUserProjects(String username) { return repository.getUserProjects(username); }
+    public void deleteProject(String projectId, String username) { repository.deleteProject(projectId, username); }
 }

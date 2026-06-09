@@ -11,7 +11,7 @@ public class WorkerService {
         this.repository = repository;
     }
 
-    public void addWorker(String name, String role, String teamId) {
-        repository.addWorker(name, role, teamId);
+    public void addWorker(String name, String role, String teamId, String projectId) {
+        repository.addWorker(name, role, teamId, projectId);
     }
 }

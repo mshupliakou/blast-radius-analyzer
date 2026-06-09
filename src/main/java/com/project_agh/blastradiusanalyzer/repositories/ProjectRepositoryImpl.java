@@ -25,23 +25,31 @@ public class ProjectRepositoryImpl implements ProjectRepository {
     @Override
     public Project createProject(String name, String username) {
         try (Session session = driver.session(sessionConfig)) {
-            String cypher = "MATCH (u:User {username: $username}) CREATE (p:Project {id: randomUUID(), name: $name})-[:OWNED_BY]->(u) RETURN p.id as id, p.name as name";
+            String cypher = "MATCH (u:User {username: $username}) CREATE (p:Project {id: randomUUID(), name: $name, ownerId: $username})-[:OWNED_BY]->(u) RETURN p.id as id, p.name as name, p.ownerId as ownerId";
             Record r = session.run(cypher, Values.parameters("name", name, "username", username)).single();
-            return new Project(r.get("id").asString(), r.get("name").asString(), "", "");
+            return new Project(r.get("id").asString(), r.get("name").asString(), "", r.get("ownerId").asString());
         }
     }
 
     @Override
     public List<Project> getUserProjects(String username) {
         try (Session session = driver.session(sessionConfig)) {
-            String cypher = "MATCH (p:Project)-[:OWNED_BY]->(u:User {username: $username}) RETURN p.id as id, p.name as name";
+            String cypher = "MATCH (p:Project)-[:OWNED_BY]->(u:User {username: $username}) RETURN p.id as id, p.name as name, coalesce(p.ownerId, '') as ownerId";
             var res = session.run(cypher, Values.parameters("username", username));
             List<Project> list = new ArrayList<>();
             while (res.hasNext()) {
                 Record r = res.next();
-                list.add(new Project(r.get("id").asString(), r.get("name").asString(), "", ""));
+                list.add(new Project(r.get("id").asString(), r.get("name").asString(), "", r.get("ownerId").asString()));
             }
             return list;
+        }
+    }
+
+    @Override
+    public void deleteProject(String projectId, String username) {
+        try (Session session = driver.session(sessionConfig)) {
+            String cypher = "MATCH (p:Project {id: $projectId})-[:OWNED_BY]->(u:User {username: $username}) DETACH DELETE p";
+            session.run(cypher, Values.parameters("projectId", projectId, "username", username));
         }
     }
 }

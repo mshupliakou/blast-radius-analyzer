@@ -3,18 +3,18 @@ package com.project_agh.blastradiusanalyzer.repositories;
 import com.project_agh.blastradiusanalyzer.models.Microservice;
 import com.project_agh.blastradiusanalyzer.repositories.interfaces.MicroserviceRepository;
 import org.neo4j.driver.Driver;
+import org.neo4j.driver.Record;
 import org.neo4j.driver.Session;
 import org.neo4j.driver.SessionConfig;
 import org.neo4j.driver.Values;
 import org.springframework.stereotype.Repository;
-import org.neo4j.driver.Record;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 @Repository
-public class MicroserviceRepositoryImpl implements MicroserviceRepository {
+class MicroserviceRepositoryImpl implements MicroserviceRepository {
     private final Driver driver;
     private final SessionConfig sessionConfig;
 
@@ -124,10 +124,9 @@ public class MicroserviceRepositoryImpl implements MicroserviceRepository {
         try (Session session = driver.session(sessionConfig)) {
             List<Map<String, String>> nodes = new ArrayList<>();
 
-            // 1. Микросервисы ПРОЕКТА
             String msCypher = "MATCH (m:Microservice)-[:IN_PROJECT]->(:Project {id: $projectId}) OPTIONAL MATCH (m)-[:BELONGS_TO]->(c:Cluster) RETURN m.id AS id, m.name AS label, m.language AS group, c.id AS clusterId, c.name AS clusterName, c.color AS clusterColor";
             var msResult = session.run(msCypher, Values.parameters("projectId", projectId));
-            while (msResult.hasNext()) { /* ЗАПОЛНЕНИЕ КАК И РАНЬШЕ */
+            while (msResult.hasNext()) {
                 Record r = msResult.next();
                 Map<String, String> n = new java.util.HashMap<>();
                 n.put("id", r.get("id").asString()); n.put("label", r.get("label").asString()); n.put("group", r.get("group").asString()); n.put("type", "SERVICE");
@@ -135,10 +134,9 @@ public class MicroserviceRepositoryImpl implements MicroserviceRepository {
                 nodes.add(n);
             }
 
-            // 2. Нотатки ПРОЕКТА
             String noteCypher = "MATCH (n:Note)-[:IN_PROJECT]->(:Project {id: $projectId}) OPTIONAL MATCH (n)-[:BELONGS_TO]->(c:Cluster) RETURN n.id AS id, n.title AS title, n.text AS text, n.color AS color, c.id AS clusterId, c.name AS clusterName, c.color AS clusterColor";
             var noteResult = session.run(noteCypher, Values.parameters("projectId", projectId));
-            while (noteResult.hasNext()) { /* ЗАПОЛНЕНИЕ КАК И РАНЬШЕ */
+            while (noteResult.hasNext()) {
                 Record r = noteResult.next();
                 Map<String, String> n = new java.util.HashMap<>();
                 n.put("id", r.get("id").asString()); n.put("title", r.get("title").asString()); n.put("text", r.get("text").asString()); n.put("color", r.get("color").asString()); n.put("type", "NOTE");
@@ -146,7 +144,6 @@ public class MicroserviceRepositoryImpl implements MicroserviceRepository {
                 nodes.add(n);
             }
 
-            // 3. Команды ПРОЕКТА
             String teamCypher = "MATCH (t:Team)-[:IN_PROJECT]->(:Project {id: $projectId}) RETURN coalesce(toString(t.id), toString(id(t))) AS id, coalesce(t.name, 'Unnamed Team') AS name";
             var teamResult = session.run(teamCypher, Values.parameters("projectId", projectId));
             while (teamResult.hasNext()) {
@@ -156,7 +153,6 @@ public class MicroserviceRepositoryImpl implements MicroserviceRepository {
                 nodes.add(n);
             }
 
-            // 4. Воркеры ПРОЕКТА
             String workerCypher = "MATCH (w:Worker)-[:IN_PROJECT]->(:Project {id: $projectId}) RETURN coalesce(toString(w.id), toString(id(w))) AS id, coalesce(w.name, 'Unknown') AS name, coalesce(w.role, 'Worker') AS role";
             var workerResult = session.run(workerCypher, Values.parameters("projectId", projectId));
             while (workerResult.hasNext()) {
@@ -166,7 +162,6 @@ public class MicroserviceRepositoryImpl implements MicroserviceRepository {
                 nodes.add(n);
             }
 
-            // 5. Связи ТОЛЬКО внутри ПРОЕКТА
             String edgesCypher = "MATCH (source)-[:IN_PROJECT]->(:Project {id: $projectId}), (target)-[:IN_PROJECT]->(:Project {id: $projectId}), (source)-[r]->(target) WHERE type(r) <> 'IN_PROJECT' AND type(r) <> 'OWNED_BY' RETURN coalesce(toString(source.id), toString(id(source))) AS from, coalesce(toString(target.id), toString(id(target))) AS to, type(r) AS type";
             var edgesResult = session.run(edgesCypher, Values.parameters("projectId", projectId));
             List<Map<String, String>> edges = new ArrayList<>();

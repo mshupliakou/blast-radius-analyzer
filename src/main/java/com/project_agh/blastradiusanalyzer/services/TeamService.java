@@ -6,14 +6,14 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class TeamService {
-    TeamRepository teamRepository;
+    private final TeamRepository teamRepository;
 
     public TeamService(TeamRepository teamRepository) {
         this.teamRepository = teamRepository;
     }
 
-    public void createTeam(Team team) {
-        teamRepository.addTeam(team);
+    public void createTeam(Team team, String projectId) {
+        teamRepository.addTeam(team, projectId);
     }
 
     public Team getTeam(String id) {

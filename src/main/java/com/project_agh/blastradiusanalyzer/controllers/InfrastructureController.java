@@ -1,9 +1,6 @@
 package com.project_agh.blastradiusanalyzer.controllers;
 
-import com.project_agh.blastradiusanalyzer.dtos.ClusterDto;
-import com.project_agh.blastradiusanalyzer.dtos.DependencyDto;
-import com.project_agh.blastradiusanalyzer.dtos.MicroserviceDto;
-import com.project_agh.blastradiusanalyzer.dtos.NoteDto;
+import com.project_agh.blastradiusanalyzer.dtos.*;
 import com.project_agh.blastradiusanalyzer.models.Microservice;
 import com.project_agh.blastradiusanalyzer.services.MicroserviceService;
 import org.springframework.http.ResponseEntity;

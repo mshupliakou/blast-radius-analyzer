@@ -16,16 +16,19 @@ class TeamRepositoryImpl implements TeamRepository {
         this.sessionConfig = sessionConfig;
     }
     @Override
-    public void addTeam(Team team) {
+    public void addTeam(Team team, String projectId) {
         try (Session session = driver.session(sessionConfig)) {
             String cypher = """
+                MATCH (p:Project {id: $projectId})
                 MERGE (t:Team {id: $id})
                 SET t.name = $name
+                MERGE (t)-[:IN_PROJECT]->(p)
                 """;
 
             session.run(cypher, Values.parameters(
                     "id", team.id(),
-                    "name", team.name()
+                    "name", team.name(),
+                    "projectId", projectId
             ));
         }
     }

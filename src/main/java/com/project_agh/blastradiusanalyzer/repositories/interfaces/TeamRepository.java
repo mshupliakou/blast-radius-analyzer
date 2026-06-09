@@ -5,7 +5,7 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface TeamRepository {
-    void addTeam(Team team);
+    void addTeam(Team team, String projectId);
     Team getTeamById(String id);
     void deleteTeamById(String id);
 }

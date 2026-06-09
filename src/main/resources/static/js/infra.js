@@ -1,16 +1,17 @@
-function getAuthHeaders() {
-    return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + localStorage.getItem('jwt') };
-}
-
 async function createMicroservice() {
+    if (!requireProject()) return;
     const name = document.getElementById('ms-name').value;
     const lang = document.getElementById('ms-lang').value;
-    if (!name.trim()) return;
-    await fetch('/api/infra/microservices', { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify({ name, language: lang }) });
-    document.getElementById('ms-name').value = ''; loadGraph();
+    if (!name.trim()) return alert("Enter a node name!");
+    try {
+        const res = await fetch('/api/infra/microservices', { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify({ name, language: lang }) });
+        if (!res.ok) return alert('Failed to create node: ' + (await res.text()));
+        document.getElementById('ms-name').value = ''; loadGraph();
+    } catch (e) { alert('Cannot connect to server.'); }
 }
 
 async function createNote() {
+    if (!requireProject()) return;
     const title = document.getElementById('note-title').value;
     const text = document.getElementById('note-text').value;
     const color = document.getElementById('note-color').value;
@@ -26,45 +27,63 @@ async function createNote() {
         if (!targetId) return alert("Select a cluster from the list!");
     }
 
-    await fetch('/api/infra/notes', { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify({ title, text, color, targetType, targetId }) });
-    document.getElementById('note-title').value = ''; document.getElementById('note-text').value = ''; loadGraph();
+    try {
+        const res = await fetch('/api/infra/notes', { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify({ title, text, color, targetType, targetId }) });
+        if (!res.ok) return alert('Failed to add note');
+        document.getElementById('note-title').value = ''; document.getElementById('note-text').value = ''; loadGraph();
+    } catch (e) { alert('Cannot connect to server.'); }
 }
 
 async function createCluster() {
+    if (!requireProject()) return;
     const name = document.getElementById('cluster-name').value;
     const color = document.getElementById('cluster-color').value;
     const selectedNodes = appState.network.getSelectedNodes().filter(id => !String(id).startsWith('hub_'));
     if (!name.trim() || selectedNodes.length < 2) return alert("Select at least 2 nodes and enter a name.");
 
-    await fetch('/api/infra/clusters', { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify({ name, color, nodeIds: selectedNodes }) });
-    closeAllPanels(); document.getElementById('cluster-name').value = ''; loadGraph();
+    try {
+        const res = await fetch('/api/infra/clusters', { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify({ name, color, nodeIds: selectedNodes }) });
+        if (!res.ok) return alert('Failed to create cluster');
+        closeAllPanels(); document.getElementById('cluster-name').value = ''; loadGraph();
+    } catch (e) { alert('Cannot connect to server.'); }
 }
 
 async function deleteSelectedNode() {
+    if (!requireProject()) return;
     if (!appState.selectedNodeId) return;
-    await fetch(`/api/infra/microservices/${appState.selectedNodeId}`, { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + localStorage.getItem('jwt') } });
-    closeAllPanels(); loadGraph();
+    try {
+        const res = await fetch(`/api/infra/microservices/${appState.selectedNodeId}`, { method: 'DELETE', headers: getAuthHeaders() });
+        if (!res.ok) return alert('Failed to delete node');
+        closeAllPanels(); loadGraph();
+    } catch (e) { alert('Cannot connect to server.'); }
 }
 
 async function deleteSelectedEdge() {
+    if (!requireProject()) return;
     if (!appState.selectedEdgeId) return;
     const edge = appState.edgesDataset.get(appState.selectedEdgeId);
-    await fetch(`/api/infra/dependencies/${edge.from}/${edge.to}`, { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + localStorage.getItem('jwt') } });
-    closeAllPanels(); loadGraph();
+    try {
+        const res = await fetch(`/api/infra/dependencies/${edge.from}/${edge.to}`, { method: 'DELETE', headers: getAuthHeaders() });
+        if (!res.ok) return alert('Failed to delete dependency');
+        closeAllPanels(); loadGraph();
+    } catch (e) { alert('Cannot connect to server.'); }
 }
 
 async function analyzeBlastRadius() {
+    if (!requireProject()) return;
     const targetId = document.getElementById('blast-target').value; if(!targetId) return;
-    const res = await fetch(`/api/infra/blast-radius/${targetId}`, { headers: { 'Authorization': 'Bearer ' + localStorage.getItem('jwt') } });
-    if(!res.ok) return;
-    const affected = await res.json();
-    const affectedIds = affected.map(s => s.id); affectedIds.push(targetId);
-    const nodesToUpdate = [];
-    appState.nodesDataset.forEach(node => {
-        if(node.type === 'NOTE' || String(node.id).startsWith('hub_')) return;
-        let newColor = '#3f3f46'; let newSize = 35;
-        if(node.id === targetId) { newColor = '#f43f5e'; newSize = 60; } else if(affectedIds.includes(node.id)) { newColor = '#fb923c'; newSize = 50; }
-        nodesToUpdate.push({ id: node.id, icon: { ...node.icon, color: newColor, size: newSize } });
-    });
-    appState.nodesDataset.update(nodesToUpdate);
+    try {
+        const res = await fetch(`/api/infra/blast-radius/${targetId}`, { headers: getAuthHeaders() });
+        if(!res.ok) return alert('Analysis failed');
+        const affected = await res.json();
+        const affectedIds = affected.map(s => s.id); affectedIds.push(targetId);
+        const nodesToUpdate = [];
+        appState.nodesDataset.forEach(node => {
+            if(node.type === 'NOTE' || String(node.id).startsWith('hub_')) return;
+            let newColor = '#3f3f46'; let newSize = 35;
+            if(node.id === targetId) { newColor = '#f43f5e'; newSize = 60; } else if(affectedIds.includes(node.id)) { newColor = '#fb923c'; newSize = 50; }
+            nodesToUpdate.push({ id: node.id, icon: { ...node.icon, color: newColor, size: newSize } });
+        });
+        appState.nodesDataset.update(nodesToUpdate);
+    } catch (e) { alert('Cannot connect to server.'); }
 }

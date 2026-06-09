@@ -3,10 +3,7 @@ package com.project_agh.blastradiusanalyzer.controllers;
 import com.project_agh.blastradiusanalyzer.dtos.WorkerDto;
 import com.project_agh.blastradiusanalyzer.services.WorkerService;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/workers")
@@ -18,8 +15,8 @@ public class WorkerController {
     }
 
     @PostMapping
-    public ResponseEntity<?> createWorker(@RequestBody WorkerDto dto) {
-        service.addWorker(dto.name(), dto.role(), dto.teamId());
+    public ResponseEntity<?> createWorker(@RequestBody WorkerDto dto, @RequestHeader("Project-Id") String projectId) {
+        service.addWorker(dto.name(), dto.role(), dto.teamId(), projectId);
         return ResponseEntity.ok().build();
     }
 }
