@@ -16,16 +16,47 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.List;
 
+/**
+ * Spring Security configuration for the application.
+ * <p>
+ * Sets up a stateless, JWT-based authentication scheme. Public endpoints
+ * (authentication, static resources) are accessible without credentials;
+ * all other requests require a valid JWT bearer token. CORS is configured
+ * to allow cross-origin requests from any origin.
+ * </p>
+ */
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthFilter;
 
+    /**
+     * Constructs the security configuration with the JWT authentication filter.
+     *
+     * @param jwtAuthFilter the filter responsible for JWT validation
+     */
     public SecurityConfig(JwtAuthenticationFilter jwtAuthFilter) {
         this.jwtAuthFilter = jwtAuthFilter;
     }
 
+    /**
+     * Configures the HTTP security filter chain.
+     * <p>
+     * <ul>
+     *   <li>CSRF protection is disabled (stateless API).</li>
+     *   <li>CORS is enabled with permissive settings.</li>
+     *   <li>Authentication and static resource paths are public.</li>
+     *   <li>All other endpoints require authentication.</li>
+     *   <li>Session management is stateless.</li>
+     *   <li>The JWT filter is inserted before
+     *       {@link UsernamePasswordAuthenticationFilter}.</li>
+     * </ul>
+     *
+     * @param http the {@link HttpSecurity} to configure
+     * @return the configured {@link SecurityFilterChain}
+     * @throws Exception if configuration fails
+     */
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http.csrf(AbstractHttpConfigurer::disable)
@@ -40,11 +71,22 @@ public class SecurityConfig {
         return http.build();
     }
 
+    /**
+     * Provides a {@link PasswordEncoder} that uses the BCrypt hashing algorithm.
+     *
+     * @return a BCrypt password encoder
+     */
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
+    /**
+     * Configures CORS to allow requests from any origin, with support for
+     * common HTTP methods and all headers.
+     *
+     * @return a permissive CORS configuration source
+     */
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();

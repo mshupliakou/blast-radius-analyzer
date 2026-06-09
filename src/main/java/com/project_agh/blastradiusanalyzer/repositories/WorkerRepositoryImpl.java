@@ -7,11 +7,24 @@ import org.neo4j.driver.SessionConfig;
 import org.neo4j.driver.Values;
 import org.springframework.stereotype.Repository;
 
+/**
+ * Neo4j-backed implementation of {@link WorkerRepository}.
+ * <p>
+ * Workers are stored as nodes with a {@code WORKS_IN} relationship to
+ * their team and an {@code IN_PROJECT} relationship to their project.
+ * </p>
+ */
 @Repository
 class WorkerRepositoryImpl implements WorkerRepository {
     private final Driver driver;
     private final SessionConfig sessionConfig;
 
+    /**
+     * Constructs the repository with the Neo4j driver and session configuration.
+     *
+     * @param driver        the Neo4j driver instance
+     * @param sessionConfig the session configuration targeting the correct database
+     */
     public WorkerRepositoryImpl(Driver driver, SessionConfig sessionConfig) {
         this.driver = driver;
         this.sessionConfig = sessionConfig;

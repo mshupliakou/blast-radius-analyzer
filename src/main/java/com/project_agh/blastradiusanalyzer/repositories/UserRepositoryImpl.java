@@ -11,11 +11,24 @@ import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
 
+/**
+ * Neo4j-backed implementation of {@link UserRepository}.
+ * <p>
+ * Users are stored as nodes keyed by username. Passwords are expected
+ * to be pre-hashed before storage.
+ * </p>
+ */
 @Repository
 class UserRepositoryImpl implements UserRepository {
     private final Driver driver;
     private final SessionConfig sessionConfig;
 
+    /**
+     * Constructs the repository with the Neo4j driver and session configuration.
+     *
+     * @param driver        the Neo4j driver instance
+     * @param sessionConfig the session configuration targeting the correct database
+     */
     public UserRepositoryImpl(Driver driver, SessionConfig sessionConfig) {
         this.driver = driver;
         this.sessionConfig = sessionConfig;

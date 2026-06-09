@@ -14,6 +14,14 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
+/**
+ * Unit tests for {@link ProjectService} using Mockito.
+ * <p>
+ * Verifies the service delegates correctly to {@link ProjectRepository}
+ * for creating, listing, and deleting projects, and that users only see
+ * their own projects.
+ * </p>
+ */
 @ExtendWith(MockitoExtension.class)
 class ProjectServiceTest {
 
@@ -27,6 +35,7 @@ class ProjectServiceTest {
         service = new ProjectService(repository);
     }
 
+    /** Creating a project delegates to the repository and returns the created project. */
     @Test
     void createsProjectForUser() {
         Project expected = new Project("p1", "My Project", "", "alice");
@@ -39,6 +48,7 @@ class ProjectServiceTest {
         verify(repository).createProject("My Project", "alice");
     }
 
+    /** Listing projects returns all projects owned by the user. */
     @Test
     void returnsProjectsForUser() {
         List<Project> projects = List.of(
@@ -53,6 +63,7 @@ class ProjectServiceTest {
         verify(repository).getUserProjects("alice");
     }
 
+    /** A user with no projects receives an empty list. */
     @Test
     void emptyListWhenNoProjects() {
         when(repository.getUserProjects("newbie")).thenReturn(List.of());
@@ -62,12 +73,14 @@ class ProjectServiceTest {
         assertTrue(result.isEmpty());
     }
 
+    /** Deleting a project delegates to the repository with the correct parameters. */
     @Test
     void deletesOwnProject() {
         service.deleteProject("p1", "alice");
         verify(repository).deleteProject("p1", "alice");
     }
 
+    /** Users cannot see each other's projects (isolation). */
     @Test
     void projectIsolationDifferentUsers() {
         when(repository.getUserProjects("alice")).thenReturn(List.of(

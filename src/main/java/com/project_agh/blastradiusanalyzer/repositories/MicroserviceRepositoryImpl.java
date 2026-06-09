@@ -13,11 +13,25 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Neo4j-backed implementation of {@link MicroserviceRepository}.
+ * <p>
+ * All operations are performed using Cypher queries executed against the
+ * configured Neo4j database. Each query is scoped to a specific project
+ * to enforce data isolation.
+ * </p>
+ */
 @Repository
 class MicroserviceRepositoryImpl implements MicroserviceRepository {
     private final Driver driver;
     private final SessionConfig sessionConfig;
 
+    /**
+     * Constructs the repository with the Neo4j driver and session configuration.
+     *
+     * @param driver        the Neo4j driver instance
+     * @param sessionConfig the session configuration targeting the correct database
+     */
     public MicroserviceRepositoryImpl(Driver driver, SessionConfig sessionConfig) {
         this.driver = driver;
         this.sessionConfig = sessionConfig;

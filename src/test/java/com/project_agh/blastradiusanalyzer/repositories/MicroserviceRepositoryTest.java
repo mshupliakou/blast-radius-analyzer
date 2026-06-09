@@ -22,6 +22,15 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * Integration tests for {@link MicroserviceRepository} using
+ * Testcontainers with a real Neo4j 5 instance.
+ * <p>
+ * Tests cover CRUD operations for microservices, dependencies, clusters,
+ * blast-radius analysis, node deletion, project isolation, and topology
+ * retrieval.
+ * </p>
+ */
 @SpringBootTest
 @Testcontainers
 class MicroserviceRepositoryTest {
@@ -56,6 +65,7 @@ class MicroserviceRepositoryTest {
         projectId = project.id();
     }
 
+    /** Creates a microservice and verifies it appears in the topology. */
     @Test
     void createsAndFindsMicroservice() {
         Microservice ms = new Microservice(UUID.randomUUID().toString(), "Auth Service", "Java");
@@ -67,6 +77,7 @@ class MicroserviceRepositoryTest {
         assertTrue(nodes.stream().anyMatch(n -> "Auth Service".equals(n.get("label"))));
     }
 
+    /** Creates a dependency and verifies the blast radius includes the source. */
     @Test
     void createsDependency() {
         Microservice a = new Microservice(UUID.randomUUID().toString(), "Service A", "Java");
@@ -80,6 +91,7 @@ class MicroserviceRepositoryTest {
         assertTrue(affected.stream().anyMatch(s -> s.id().equals(a.id())));
     }
 
+    /** Verifies transitive dependencies are captured by blast-radius analysis. */
     @Test
     void blastRadiusChain() {
         Microservice a = new Microservice(UUID.randomUUID().toString(), "A", "Java");
@@ -97,6 +109,7 @@ class MicroserviceRepositoryTest {
         assertTrue(affected.stream().anyMatch(s -> s.id().equals(b.id())));
     }
 
+    /** Deletes a node and verifies it is removed from the topology. */
     @Test
     void deletesNode() {
         Microservice ms = new Microservice(UUID.randomUUID().toString(), "To Delete", "Go");
@@ -109,6 +122,7 @@ class MicroserviceRepositoryTest {
         assertTrue(nodes.stream().noneMatch(n -> "To Delete".equals(n.get("label"))));
     }
 
+    /** Deletes a dependency and verifies the blast radius is empty. */
     @Test
     void deletesDependency() {
         Microservice a = new Microservice(UUID.randomUUID().toString(), "A", "Java");
@@ -123,6 +137,7 @@ class MicroserviceRepositoryTest {
         assertTrue(affected.isEmpty());
     }
 
+    /** Verifies that data from one project is not visible in another. */
     @Test
     void projectIsolation() {
         User user2 = new User("otheruser", "otheruser", "none");
@@ -137,6 +152,7 @@ class MicroserviceRepositoryTest {
         assertTrue(otherNodes.stream().noneMatch(n -> "Secret Service".equals(n.get("label"))));
     }
 
+    /** Creates a cluster and verifies nodes are correctly assigned. */
     @Test
     void createsClusterWithNodes() {
         Microservice a = new Microservice(UUID.randomUUID().toString(), "A", "Java");

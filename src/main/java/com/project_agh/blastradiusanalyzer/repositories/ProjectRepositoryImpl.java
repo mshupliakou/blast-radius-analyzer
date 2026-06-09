@@ -12,11 +12,25 @@ import org.springframework.stereotype.Repository;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Neo4j-backed implementation of {@link ProjectRepository}.
+ * <p>
+ * Projects are stored as nodes with an {@code OWNED_BY} relationship to
+ * the owning user. All queries verify ownership before performing
+ * mutations.
+ * </p>
+ */
 @Repository
 public class ProjectRepositoryImpl implements ProjectRepository {
     private final Driver driver;
     private final SessionConfig sessionConfig;
 
+    /**
+     * Constructs the repository with the Neo4j driver and session configuration.
+     *
+     * @param driver        the Neo4j driver instance
+     * @param sessionConfig the session configuration targeting the correct database
+     */
     public ProjectRepositoryImpl(Driver driver, SessionConfig sessionConfig) {
         this.driver = driver;
         this.sessionConfig = sessionConfig;

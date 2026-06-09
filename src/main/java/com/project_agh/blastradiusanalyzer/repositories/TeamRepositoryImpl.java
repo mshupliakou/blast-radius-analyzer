@@ -6,11 +6,24 @@ import org.neo4j.driver.*;
 import org.neo4j.driver.Record;
 import org.springframework.stereotype.Repository;
 
+/**
+ * Neo4j-backed implementation of {@link TeamRepository}.
+ * <p>
+ * Teams are stored as nodes linked to a project via an {@code IN_PROJECT}
+ * relationship.
+ * </p>
+ */
 @Repository
 class TeamRepositoryImpl implements TeamRepository {
     private final Driver driver;
     private final SessionConfig sessionConfig;
 
+    /**
+     * Constructs the repository with the Neo4j driver and session configuration.
+     *
+     * @param driver        the Neo4j driver instance
+     * @param sessionConfig the session configuration targeting the correct database
+     */
     public TeamRepositoryImpl(Driver driver, SessionConfig sessionConfig) {
         this.driver = driver;
         this.sessionConfig = sessionConfig;

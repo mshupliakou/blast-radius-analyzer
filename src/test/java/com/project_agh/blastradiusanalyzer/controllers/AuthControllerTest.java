@@ -21,6 +21,13 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+/**
+ * Integration tests for {@link AuthController}.
+ * <p>
+ * Tests the register and login endpoints using mocked repository
+ * dependencies and {@link MockMvc} for HTTP request simulation.
+ * </p>
+ */
 @SpringBootTest
 @AutoConfigureMockMvc
 class AuthControllerTest {
@@ -37,6 +44,7 @@ class AuthControllerTest {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    /** Registers a new user successfully and receives a JWT. */
     @Test
     void registerNewUser() throws Exception {
         when(userRepository.findByUsername("newuser")).thenReturn(Optional.empty());
@@ -50,6 +58,7 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$.username").value("newuser"));
     }
 
+    /** Returns 409 Conflict when registering a duplicate username. */
     @Test
     void registerDuplicateUser() throws Exception {
         when(userRepository.findByUsername("existing")).thenReturn(
@@ -62,6 +71,7 @@ class AuthControllerTest {
                 .andExpect(status().isConflict());
     }
 
+    /** Logs in with correct credentials and receives a JWT. */
     @Test
     void loginSuccess() throws Exception {
         String encoded = passwordEncoder.encode("password");
@@ -77,6 +87,7 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$.username").value("alice"));
     }
 
+    /** Returns 401 Unauthorized when the password is incorrect. */
     @Test
     void loginWrongPassword() throws Exception {
         String encoded = passwordEncoder.encode("password");
@@ -90,6 +101,7 @@ class AuthControllerTest {
                 .andExpect(status().isUnauthorized());
     }
 
+    /** Returns 401 Unauthorized when the user does not exist. */
     @Test
     void loginNonExistentUser() throws Exception {
         when(userRepository.findByUsername("ghost")).thenReturn(Optional.empty());
