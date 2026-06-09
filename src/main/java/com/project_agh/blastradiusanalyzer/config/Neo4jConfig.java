@@ -11,16 +11,16 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class Neo4jConfig {
 
-    @Value("${NEO4J_URI}")
+    @Value("${NEO4J_URI:neo4j://localhost:7687}")
     private String uri;
 
-    @Value("${NEO4J_USERNAME}")
+    @Value("${NEO4J_USERNAME:neo4j}")
     private String username;
 
-    @Value("${NEO4J_PASSWORD}")
+    @Value("${NEO4J_PASSWORD:keyhes567}")
     private String password;
 
-    @Value("${NEO4J_DATABASE}")
+    @Value("${NEO4J_DATABASE:microservices}")
     private String databaseName;
 
     @Bean(destroyMethod = "close")
