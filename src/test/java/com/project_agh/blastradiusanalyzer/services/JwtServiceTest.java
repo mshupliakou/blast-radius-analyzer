@@ -1,15 +1,15 @@
 package com.project_agh.blastradiusanalyzer.services;
 
+import com.project_agh.blastradiusanalyzer.config.TestNeo4jConfig;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.springframework.context.annotation.Import;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
-@ExtendWith(SpringExtension.class)
+@Import(TestNeo4jConfig.class)
 class JwtServiceTest {
 
     @Autowired
