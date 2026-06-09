@@ -19,7 +19,7 @@ public class Neo4jConfig {
     @Value("${NEO4J_USERNAME:neo4j}")
     private String username;
 
-    @Value("${NEO4J_PASSWORD:keyhes567}")
+    @Value("${NEO4J_PASSWORD:neo4j}")
     private String password;
 
     @Value("${NEO4J_DATABASE:microservices}")

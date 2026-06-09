@@ -1,66 +1,122 @@
 # ⚛️ Architecture Blast Radius Analyzer
 
-A full-stack visualization and analysis tool designed to map microservice ecosystems, track team ownership, and calculate the "blast radius" (impact zone) of potential service failures using Graph Data modeling.
+A full-stack visualization and analysis tool designed to map microservice ecosystems, track team ownership, and calculate the "blast radius" (impact zone) of potential service failures using graph data modeling with Neo4j.
 
-![Blast Radius Analyzer UI](img.png) **
+## ✨ Capabilities
 
-## 🚀 Features
+### 🔬 Blast Radius Analysis
+When a microservice fails, which other services are affected? The tool traverses the dependency graph to find every upstream service that depends (directly or transitively) on the failing one — showing the full impact zone. This helps prioritize which services to fix first and communicate risk to stakeholders.
 
-* **Interactive Topology Mapping:** Visually construct your system architecture. Add microservices, databases, and caches (Java, Go, Node.js, PostgreSQL, Redis, etc.) with custom icon sets.
-* **Blast Radius Algorithm:** Instantly calculate and highlight downstream dependencies. If a core service goes down, the tool traverses the graph to show exactly which upstream services will be affected.
-* **Organizational Mapping:** Register teams, add engineers, and assign microservices to specific maintainer teams to clarify ownership.
-* **Clustering & Context:** Group related microservices into colored deployment clusters. Attach floating or node-specific "Sticky Notes" for architectural documentation.
-* **Dynamic Graph UI:** Smooth, physics-based graph rendering built with Vis.js, featuring interactive "drag-to-link" connection modes and dynamic action panels.
+### 🗺️ Interactive Topology Mapping
+Visually build your system architecture node by node. Add microservices (Java, Go, Node.js, Python, etc.), databases (PostgreSQL, Redis, MongoDB), and caches. Drag to create connections, reorganize the graph, and export the visualization. Built with Vis.js for smooth physics-based rendering.
+
+### 👥 Organizational Context
+Register teams and add engineers. Assign each microservice to its owning team. The graph color-codes services by team, making it easy to see who is responsible for what and how team boundaries align (or misalign) with dependency chains.
+
+### 🏷️ Clusters & Documentation
+Group related microservices into colored clusters (e.g. "Payment Domain", "User Platform"). Attach floating sticky notes or node-anchored notes to document architectural decisions, known issues, or migration plans — all persisted in the graph database.
+
+### 🔐 Authentication & Multi-tenant Isolation
+JWT-based authentication with per-user project isolation. Each user's graph data is fully separated — no cross-user leakage. Register and log in via the API.
 
 ## 🛠️ Tech Stack
 
 **Backend:**
-* Java 17
-* Spring Boot 3 (Web, RESTful APIs)
-* Spring Data Neo4j
-* Neo4j Driver (Cypher Query Language)
+* Java 21
+* Spring Boot 3 (Web, Security, RESTful APIs)
+* Neo4j Java Driver (Cypher Query Language)
+* JWT (jjwt) for authentication
+* Testcontainers for integration testing
 
 **Frontend:**
 * HTML5 / CSS3
 * Vanilla JavaScript
-* Tailwind CSS (for modern, glassmorphism UI)
-* Vis.js Network (for physics-based graph rendering)
+* Tailwind CSS (glassmorphism UI)
+* Vis.js Network (graph rendering)
 * FontAwesome 6
+
+## ✅ Testing
+
+The project includes both unit and integration tests:
+
+| Layer | Test | What it covers |
+|---|---|---|
+| `ProjectServiceTest` | 5 unit tests | Project CRUD, ownership validation, user isolation |
+| `JwtServiceTest` | 7 unit tests | Token generation, validation, uniqueness, edge cases |
+| `AuthControllerTest` | 5 integration tests | Registration, duplicate detection, login, wrong password, non-existent user — uses mocked repository |
+| `BlastRadiusAnalyzerApplicationTests` | 1 smoke test | Application context loads with all beans |
+| `MicroserviceRepositoryTest` | 7 integration tests | CRUD operations, blast radius traversal, dependency chaining, clustering, project isolation — uses Testcontainers with real Neo4j |
+
+**Running tests:**
+
+```bash
+# Unit tests + integration tests with mocked Neo4j (no database needed)
+./mvnw test
+
+# Full suite including Testcontainers integration tests (requires Docker)
+./mvnw verify -Pintegration
+```
 
 ## ⚙️ Getting Started
 
 ### Prerequisites
-* Java 17+
+* Java 21+
 * Maven
-* A running instance of **Neo4j** (Local or Neo4j AuraDB)
+* Docker (optional — for containerized setup or integration tests)
+
+### Option A: Docker Compose (recommended)
+
+```bash
+docker compose up --build
+```
+
+This starts both Neo4j and the application. The app will be available at http://localhost:8080.
+
+### Option B: Local development
+
+1. Start a Neo4j instance (local or via Docker):
+
+```bash
+docker run -d \
+  --name neo4j \
+  -p 7687:7687 \
+  -e NEO4J_AUTH=neo4j/neo4j \
+  -e NEO4J_dbms_default__database=microservices \
+  neo4j:5
+```
+
+2. Run the application:
+
+```bash
+./mvnw spring-boot:run
+```
+
+The application will be available at http://localhost:8080.
 
 ### Configuration
-1. Clone the repository:
-   ```bash
-   git clone [https://github.com/mshupliakou/blast-radius-analyzer.git](https://github.com/mshupliakou/blast-radius-analyzer.git)
-   ```
 
-2. Configure your Neo4j database credentials in `src/main/resources/application.properties`:
+All settings have sensible defaults and can be overridden via environment variables:
 
-    ```properties
-    spring.application.name=BlastRadiusAnalyzer
-    NEO4J_URI=bolt://localhost:7687
-    NEO4J_USERNAME=neo4j
-    NEO4J_PASSWORD=your_password
-    NEO4J_DATABASE=neo4j
-    ```
-3. Running the Application
-Run the Spring Boot application using Maven:
+| Variable | Default | Description |
+|---|---|---|
+| `NEO4J_URI` | `neo4j://localhost:7687` | Neo4j connection URI |
+| `NEO4J_USERNAME` | `neo4j` | Database user |
+| `NEO4J_PASSWORD` | `neo4j` | Database password |
+| `NEO4J_DATABASE` | `microservices` | Database name |
+| `JWT_SECRET` | *(embedded)* | JWT signing secret |
 
-    ```bash
-    ./mvnw spring-boot:run
-    ```
-4. The application will be available at http://localhost:8080.
+## 🧠 How it Works (Cypher Example)
 
-### 🧠 How it Works (Cypher Example)
-The blast radius calculation leverages Neo4j's powerful graph traversal. When analyzing a target service, the backend executes a Cypher query to find all paths of DEPENDS_ON relationships leading to the target of any depth (*1..):
+The blast radius calculation leverages Neo4j's graph traversal. When analyzing a target service, the backend finds all upstream services that transitively depend on it:
 
-```
+```cypher
 MATCH (m:Microservice)-[:DEPENDS_ON*1..]->(target {id: $targetId})
 RETURN DISTINCT m.id AS id, m.name AS name, m.language AS language
 ```
+
+## 🐳 Docker
+
+| File | Purpose |
+|---|---|
+| `Dockerfile` | Multi-stage build — compiles with Maven, runs with JRE 21 |
+| `docker-compose.yml` | Orchestrates Neo4j 5 + app with health checks and networking |

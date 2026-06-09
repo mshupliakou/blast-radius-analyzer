@@ -9,7 +9,7 @@ services:
     volumes:
       - neo4j_data:/data
     healthcheck:
-      test: ["CMD", "cypher-shell", "-u", "neo4j", "-p", "keyhes567", "RETURN 1"]
+      test: ["CMD", "cypher-shell", "-u", "neo4j", "-p", "neo4j", "RETURN 1"]
       interval: 10s
       timeout: 5s
       retries: 10
